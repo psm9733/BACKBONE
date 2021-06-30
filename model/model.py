@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
-from backbone import *
+from model.layers import Conv2D_BN
+from model.backbone import ResNet50
 from utils.utils import weight_initialize
+from torchsummary import summary
 
 class Classification(nn.Module):
     def __init__(self, activation, classes):
@@ -23,4 +25,5 @@ if __name__ == "__main__":
     input_shape = (3, 224, 224)
     classes = 200
     model = Classification(activation, classes)
+    weight_initialize(model)
     summary(model, input_shape, batch_size=4, device='cpu')

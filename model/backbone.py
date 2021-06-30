@@ -1,5 +1,4 @@
-from torchsummary import summary
-from layers import *
+from model.layers import *
 
 class ResNet50(nn.Module):
     def __init__(self, activation):
