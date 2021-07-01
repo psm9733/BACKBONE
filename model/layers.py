@@ -33,34 +33,4 @@ class ResidualBlock(nn.Module):
         else:
             identity = input
         output += identity
-
-        return output
-
-class ResNet50(nn.Module):
-    def __init__(self, activation):
-        self.resnet50 = nn.Sequential(
-            Conv2D_BN(input.shape[1], activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding=(3, 3)),
-            nn.MaxPool2d((2, 2)),
-            ResidualBlock(in_channels=64, activation=activation, out_channels=(64, 64, 256), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=256, activation=activation, out_channels=(64, 64, 256), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=256, activation=activation, out_channels=(64, 64, 256), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=256, activation=activation, out_channels=(128, 128, 512), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=512, activation=activation, out_channels=(128, 128, 512), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=512, activation=activation, out_channels=(128, 128, 512), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=512, activation=activation, out_channels=(128, 128, 512), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-
-            ResidualBlock(in_channels=512, activation=activation, out_channels=(256, 256, 1024), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=1024, activation=activation, out_channels=(256, 256, 1024), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=1024, activation=activation, out_channels=(256, 256, 1024), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=1024, activation=activation, out_channels=(256, 256, 1024), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=1024, activation=activation, out_channels=(256, 256, 1024), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=1024, activation=activation, out_channels=(256, 256, 1024), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-
-            ResidualBlock(in_channels=1024, activation=activation, out_channels=(512, 512, 2048), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=2048, activation=activation, out_channels=(512, 512, 2048), kernel_size=(3, 3), stride=1, padding=(1, 1)),
-            ResidualBlock(in_channels=2048, activation=activation, out_channels=(512, 512, 2048), kernel_size=(3, 3), stride=1, padding=(1, 1))
-        )
-
-    def forward(self, input):
-        output = self.resnet50(input)
         return output

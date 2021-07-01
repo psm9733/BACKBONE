@@ -1,6 +1,11 @@
+import numpy as np
 from albumentations.core.serialization import load
 from torch.utils.data import Dataset
 from torchvision import transforms
+import albumentations
+import albumentations.pytorch
+from torch.utils.data import DataLoader
+import tqdm
 import torch
 import torch.nn.functional as F
 import glob
@@ -8,9 +13,7 @@ import os
 import cv2
 
 class TinyImageNet(Dataset):
-    num_classes = 200
-
-    def __init__(self, root_dir, is_train, one_hot, transform=None) -> None:
+    def __init__(self, root_dir, is_train, one_hot, transform=None, num_classes = 200) -> None:
         """
         : root_dir: data path
         : is_train: set whether load dataset as trainset or valid set
@@ -23,6 +26,7 @@ class TinyImageNet(Dataset):
         self.transform = transform
         self.one_hot = one_hot
         self.is_train = is_train
+        self.num_classes = num_classes
         with open(root_dir + '/wnids.txt', 'r') as f:
             self.label_list = f.read().splitlines()
         if is_train:
@@ -65,12 +69,6 @@ class TinyImageNet(Dataset):
 
 
 if __name__ == '__main__':
-    import albumentations
-    import albumentations.pytorch
-    from torch.utils.data import DataLoader
-    import numpy as np
-    import tqdm
-
     transform = albumentations.Compose([
         albumentations.HorizontalFlip(p=0.5),
         albumentations.RandomBrightnessContrast(),
@@ -79,8 +77,12 @@ if __name__ == '__main__':
     ])
 
     loader = DataLoader(TinyImageNet(
-        'E:/FSNet2/Datasets/tiny-imagenet-200', True, True, transform), batch_size=128, shuffle=True, num_workers=4)
+        'C:/Users/sangmin/Desktop/backbone/dataset/tiny-imagenet-200', True, True, transform), batch_size=128, shuffle=True, num_workers=4)
     for i in range(2):
         print('epoch', i)
         for batch, sample in tqdm.tqdm(enumerate(loader), total=loader.__len__()):
             img = sample['img'].numpy()[0]
+            img = np.transpose(img, (1, 2, 0))
+            img = cv2.resize(img, (416, 416))
+            cv2.imshow("test", img)
+            cv2.waitKey()

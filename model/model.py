@@ -18,7 +18,9 @@ class Classification(nn.Module):
     def forward(self, input):
         output = self.backbone(input)
         output = self.classification_head(output)
-        return output
+        b, c, _, _ = output.size()
+        output = output.view(b, c)
+        return {'pred': output}
 
 if __name__ == "__main__":
     activation = nn.ReLU()

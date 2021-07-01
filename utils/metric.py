@@ -1,6 +1,5 @@
 import torch
 
-
 class TopKAccuracy:
     def __init__(self, one_hot, topK=[1, 5]) -> None:
         self.one_hot = one_hot
