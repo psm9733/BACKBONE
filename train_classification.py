@@ -30,6 +30,7 @@ def main():
     max_epoch = 1000
     model = Classification(activation, num_classes)
     summary(model, input_shape, batch_size=batch_size, device='cpu')
+    exit()
     weight_initialize(model)
     ctx = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if ctx == torch.device('cpu'):
