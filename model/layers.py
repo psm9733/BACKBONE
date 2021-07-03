@@ -50,16 +50,16 @@ class DenseBlock(nn.Module):
             identity = self.identity(input)
         else:
             identity = input
-        output = torch.cat(output, identity)
+        output = torch.cat([output, identity], dim = 1)
         return output
 
 class TransitionLayer(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros'):
         super(TransitionLayer, self).__init__()
-        self.Conv2D_BN = Conv2D_BN(in_channels, activation, out_channels, kernel_size=(1, 1), stride=1, padding=0)
-        self.Max_pool = nn.MaxPool2d(kernel_size=(2, 2), stride = 2)
+        self.Conv2D_BN = Conv2D_BN(in_channels, activation, out_channels, kernel_size=kernel_size, stride = stride, padding=0)
+        # self.Max_pool = nn.MaxPool2d(kernel_size=(2, 2), stride = 2)
 
     def forward(self, input):
         output = self.Conv2D_BN(input)
-        output = self.Max_pool(output)
+        # output = self.Max_pool(output)
         return output
