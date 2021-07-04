@@ -1,16 +1,18 @@
 import torch
 import torch.nn as nn
-from model.layers import Conv2D_BN
-from model.backbone import ResNet26, ResNet50, DenseNet32, DenseNet64
+from layers import Conv2D_BN
+from resnet import *
+from resnext import *
+from densenet import *
 from utils.utils import weight_initialize
 from torchsummary import summary
 
 class Classification(nn.Module):
     def __init__(self, activation, classes):
         super(Classification, self).__init__()
-        self.backbone = DenseNet32(activation)
-        # in_channel = self.backbone.output.Conv2D_BN_3.conv_layer.out_channels           #resnet
-        in_channel = self.backbone.output.Conv2D_BN_2.conv_layer.out_channels + self.backbone.output.Conv2D_BN_1.conv_layer.in_channels         #densenet
+        self.backbone = ResNext14(activation)
+        in_channel = self.backbone.output.Conv2D_BN_3.conv_layer.out_channels           #resnet, resnext
+        # in_channel = self.backbone.output.Conv2D_BN_2.conv_layer.out_channels + self.backbone.output.Conv2D_BN_1.conv_layer.in_channels         #densenet
         self.classification_head = nn.Sequential(
             Conv2D_BN(in_channel, activation, 1280, 1),
             nn.AdaptiveAvgPool2d(1),
