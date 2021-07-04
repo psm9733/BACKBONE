@@ -1,4 +1,5 @@
 from model.layers import *
+from model.blocks import *
 
 class ResNext14(nn.Module):
     def __init__(self, activation, groups, bias = True):

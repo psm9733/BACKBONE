@@ -1,4 +1,5 @@
 from model.layers import *
+from model.blocks import *
 
 class ResNet26(nn.Module):
     def __init__(self, activation, bias = True):

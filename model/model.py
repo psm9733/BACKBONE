@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
-from layers import Conv2D_BN
-from resnet import *
-from resnext import *
-from densenet import *
+from model.layers import Conv2D_BN
+from model.backbone.resnet import *
+from model.backbone.resnext import *
+from model.backbone.densenet import *
 from utils.utils import weight_initialize
 from torchsummary import summary
 
