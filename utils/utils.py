@@ -15,3 +15,9 @@ def make_divisible(v, divisor=8, min_value=None):
     if new_v < 0.9 * v:
         new_v += divisor
     return new_v
+
+def getPadding(kernal_size, mode = 'same'):
+    if mode == 'same':
+        return (int((kernal_size[0] - 1) / 2), (int((kernal_size[1] - 1) / 2)))
+    else:
+        return 0
