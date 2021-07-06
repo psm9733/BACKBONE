@@ -1,37 +1,46 @@
+import os
 import tqdm
 import torch
 import albumentations
 import albumentations.pytorch
 import warnings
 import torch.nn as nn
-import datetime as pydatetime
-import os
+import utils.pytorch_ssim as pytorch_ssim
+from datetime import datetime
 from torch.utils.data import DataLoader
-from model.model import Classification
 from utils.utils import weight_initialize
 from utils.generator import NoiseReduction
 from utils.logger import Logger
-from utils.metric import TopKAccuracy
+from utils.saver import Saver
 from utils.utils import make_divisible
 from model.model import Segmentation
 from torchsummary import summary
 
 def main():
     activation = nn.ReLU()
-    input_shape = (3, 320, 320)
+    input_shape = (3, 416, 416)
     batch_size = 2
+    feature_num = 48
     worker = 4
     learning_rate = 1e-3
     weight_decay = 1e-4
     log_freq = 100
     val_freq = 5
-    save_freq = 5000
-    logdir = "./logs/" + str(pydatetime.datetime.now().timestamp())
+    save_freq = 1000
+    max_epoch = 100
+    timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
+    logdir = "./logs/" + timestamp
+    save_dir = "./saved_model/" + timestamp
+
+    if os.path.isdir('./logs') == False:
+        os.mkdir('./logs')
+    if os.path.isdir('./saved_model') == False:
+        os.mkdir('./saved_model')
+    if os.path.isdir(save_dir) == False:
+        os.mkdir(save_dir)
     if os.path.isdir(logdir) == False:
         os.mkdir(logdir)
-
-    max_epoch = 100
-    model = Segmentation(activation)
+    model = Segmentation(activation, feature_num)
     summary(model, input_shape, batch_size=batch_size, device='cpu')
     weight_initialize(model)
     ctx = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -69,8 +78,10 @@ def main():
     # training setup
     optimizer = torch.optim.SGD(model.parameters(), learning_rate, momentum=0.9, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, learning_rate / 10, learning_rate, mode='triangular', step_size_up=trainLoader.__len__() * 4)
-    loss_fn = torch.nn.MSELoss()
-    logger = Logger(logdir, log_freq, save_freq)
+    # loss_fn = torch.nn.Loss()
+    loss_fn = pytorch_ssim.SSIM(window_size = 11)
+    logger = Logger(logdir, log_freq)
+    saver = Saver(save_dir, save_freq)
 
     # Fit
     logdata = dict()
@@ -78,8 +89,7 @@ def main():
     print('max epoch: ', max_epoch)
     for epochs in range(max_epoch):
         model.train()
-        iterator = tqdm.tqdm(enumerate(trainLoader),
-                             total=trainLoader.__len__(), desc='')
+        iterator = tqdm.tqdm(enumerate(trainLoader), total=trainLoader.__len__(), desc='')
         for batch, sample in iterator:
             x = sample['img'].to(ctx)
             y_true = sample['y_true'].to(ctx)
@@ -91,10 +101,10 @@ def main():
             scheduler.step()
             logdata['train_loss'] = loss.item()
             logdata['lr'] = optimizer.param_groups[0]['lr']
-            logger.step(logdata, model)
+            logger.step(logdata)
+            saver.step(model)
             iterator.set_description("epoch: {0}, iter: {1}/{2}, loss: {3:0.4f}".format(
                 epochs, batch, trainLoader.__len__(), logdata['train_loss']))
-
 
         if epochs % val_freq == val_freq - 1:
             model.eval()
@@ -109,7 +119,6 @@ def main():
                     logdata['valid_loss'] = loss.item()
                     iterator.set_description("epoch: {0}, iter: {1}/{2}, loss: {3:0.4f}".format(
                         epochs, batch, trainLoader.__len__(), logdata['train_loss']))
-
 
 if __name__ == "__main__":
     main()

@@ -11,9 +11,9 @@ from torchsummary import summary
 class Classification(nn.Module):
     def __init__(self, activation, classes):
         super(Classification, self).__init__()
-        self.backbone = DenseNet32(activation)
-        # in_channel = self.backbone.output.conv2d_bn_3.conv_layer.out_channels           #resnet, resnext
-        in_channel = self.backbone.output.conv2d_bn_2.conv_layer.out_channels + self.backbone.output.conv2d_bn_1.conv_layer.in_channels         #densenet
+        self.backbone = ResNet50(activation)
+        in_channel = self.backbone.output.conv2d_bn_3.conv_layer.out_channels           #resnet, resnext
+        # in_channel = self.backbone.output.conv2d_bn_2.conv_layer.out_channels + self.backbone.output.conv2d_bn_1.conv_layer.in_channels         #densenet
         self.classification_head = nn.Sequential(
             Conv2D_BN(in_channel, activation, 1280, (1, 1)),
             nn.AdaptiveAvgPool2d(1),
@@ -28,9 +28,9 @@ class Classification(nn.Module):
         return {'pred': output}
 
 class Segmentation(nn.Module):
-    def __init__(self, activation):
+    def __init__(self, activation, feature_num):
         super(Segmentation, self).__init__()
-        self.backbone = SHNet(activation)
+        self.backbone = SHNetTiny(activation, feature_num)
 
     def forward(self, input):
         output = self.backbone(input)

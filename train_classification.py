@@ -1,14 +1,17 @@
+import os
 import tqdm
 import torch
 import albumentations
 import albumentations.pytorch
 import warnings
 import torch.nn as nn
+from datetime import datetime
 from torch.utils.data import DataLoader
 from model.model import Classification
 from utils.utils import weight_initialize
 from utils.generator import TinyImageNet
 from utils.logger import Logger
+from utils.saver import Saver
 from utils.metric import TopKAccuracy
 from utils.utils import make_divisible
 from model.model import Classification
@@ -26,8 +29,19 @@ def main():
     log_freq = 100
     val_freq = 5
     save_freq = 10000
-    logdir = "./logs"
     max_epoch = 200
+    timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
+    logdir = "./logs/" + timestamp
+    save_dir = "./saved_model/" + timestamp
+    if os.path.isdir('./logs') == False:
+        os.mkdir('./logs')
+    if os.path.isdir('./saved_model') == False:
+        os.mkdir('./saved_model')
+    if os.path.isdir(save_dir) == False:
+        os.mkdir(save_dir)
+    if os.path.isdir(logdir) == False:
+        os.mkdir(logdir)
+
     model = Classification(activation, num_classes)
     summary(model, input_shape, batch_size=batch_size, device='cpu')
     weight_initialize(model)
@@ -38,10 +52,10 @@ def main():
 
     # data setup
     train_transform = albumentations.Compose([
-        albumentations.HorizontalFlip(p=0.5),
-        albumentations.VerticalFlip(p=0.5),
-        albumentations.Affine(),
-        albumentations.ColorJitter(),
+        # albumentations.HorizontalFlip(p=0.5),
+        # albumentations.VerticalFlip(p=0.5),
+        # albumentations.Affine(),
+        # albumentations.ColorJitter(),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ])
@@ -64,7 +78,8 @@ def main():
         optimizer, learning_rate / 10, learning_rate, mode='triangular', step_size_up=trainLoader.__len__() * 4)
     loss_fn = torch.nn.CrossEntropyLoss()
 
-    logger = Logger(logdir, log_freq, save_freq)
+    logger = Logger(logdir, log_freq)
+    saver = Saver(save_dir, save_freq)
     metric = TopKAccuracy(one_hot=False)
 
     # Fit
@@ -90,7 +105,8 @@ def main():
             for k, v in metric.accuracy.items():
                 logdata['train_top{}'.format(k)] = v
             logdata['lr'] = optimizer.param_groups[0]['lr']
-            logger.step(logdata, model)
+            logger.step(logdata)
+            saver.step(model)
             iterator.set_description("epoch: {0}, iter: {1}/{2}, loss: {3:0.4f}, train acc:{4:0.4f}".format(
                 epochs, batch, trainLoader.__len__(), logdata['train_loss'], logdata['train_top1']))
 
