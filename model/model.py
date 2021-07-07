@@ -4,6 +4,7 @@ from model.layers import Conv2D_BN
 from model.backbone.resnet import *
 from model.backbone.resnext import *
 from model.backbone.densenet import *
+from model.backbone.densenext import *
 from model.backbone.shnet import *
 from utils.utils import weight_initialize
 from torchsummary import summary
@@ -11,9 +12,9 @@ from torchsummary import summary
 class Classification(nn.Module):
     def __init__(self, activation, classes):
         super(Classification, self).__init__()
-        self.backbone = ResNet50(activation)
-        in_channel = self.backbone.output.conv2d_bn_3.conv_layer.out_channels           #resnet, resnext
-        # in_channel = self.backbone.output.conv2d_bn_2.conv_layer.out_channels + self.backbone.output.conv2d_bn_1.conv_layer.in_channels         #densenet
+        self.backbone = DenseNext32(activation)
+        # in_channel = self.backbone.output.conv2d_bn_3.conv_layer.out_channels           #resnet, resnext
+        in_channel = self.backbone.output.conv2d_bn_2.conv_layer.out_channels + self.backbone.output.conv2d_bn_1.conv_layer.in_channels         #densenet
         self.classification_head = nn.Sequential(
             Conv2D_BN(in_channel, activation, 1280, (1, 1)),
             nn.AdaptiveAvgPool2d(1),

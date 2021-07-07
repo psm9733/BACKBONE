@@ -7,7 +7,6 @@ import warnings
 import torch.nn as nn
 from datetime import datetime
 from torch.utils.data import DataLoader
-from model.model import Classification
 from utils.utils import weight_initialize
 from utils.generator import TinyImageNet
 from utils.logger import Logger
@@ -16,7 +15,6 @@ from utils.metric import TopKAccuracy
 from utils.utils import make_divisible
 from model.model import Classification
 from torchsummary import summary
-
 
 def main():
     activation = nn.ReLU()

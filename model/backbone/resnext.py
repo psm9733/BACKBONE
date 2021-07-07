@@ -31,7 +31,7 @@ class ResNext26(nn.Module):
         self.output = ResidualBlock(in_channels=2048, activation=activation, out_channels=(512, 512, 2048), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups=groups)
 
         self.resnext26 = nn.Sequential(
-            Conv2D_BN(3, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding=(3, 3)),
+            Conv2D_BN(3, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding='same'),
             nn.MaxPool2d((2, 2), stride=2),
             ResidualBlock(in_channels=64, activation=activation, out_channels=(64, 64, 256), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups=groups),
             self.block1_end,

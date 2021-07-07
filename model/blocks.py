@@ -159,7 +159,6 @@ class HourglassBlock(nn.Module):          #StackedHourGlass
 class HourglassBlockTiny(nn.Module):          #StackedHourGlass
     def __init__(self, activation, feature_num = 256, bias = True):
         super(HourglassBlockTiny, self).__init__()
-        self.stemblock = StemBlock(in_channels=3, activation=activation, out_channels=(int(feature_num / 8), int(feature_num / 4)), kernel_size=(3, 3), stride=(2, 1), padding='same')
         self.downblock1 = HourglassDownBlock(in_channels=int(feature_num / 4), activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 2, 1), padding='same')
         self.downblock2 = HourglassDownBlock(in_channels=feature_num, activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 2, 1), padding='same')
         self.downblock3 = HourglassDownBlock(in_channels=feature_num, activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 2, 1), padding='same')

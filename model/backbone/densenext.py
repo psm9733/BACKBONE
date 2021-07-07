@@ -9,7 +9,7 @@ class DenseNext32(nn.Module):
         self.block3_end = DenseBlock(in_channels=352, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = 32)
         self.output = DenseBlock(in_channels=512, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = 32)
         self.densenext32 = nn.Sequential(
-            Conv2D_BN(3, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding=(3, 3)),
+            Conv2D_BN(3, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding='same'),
             nn.MaxPool2d((2, 2), stride=2),
 
             DenseBlock(in_channels=64, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = 32),

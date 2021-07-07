@@ -13,7 +13,7 @@ if __name__ == "__main__":
     activation = nn.ReLU()
     input_shape = (3, 416, 416)
     batch_size = 1
-    model = SHNet(activation)
+    model = ResNet50(activation)
     summary(model, input_shape, batch_size=batch_size, device='cpu')
     dummy_input = Variable(torch.randn(4, input_shape[0], input_shape[1], input_shape[2]))
     torch.onnx.export(model, dummy_input, "model.onnx", training=TrainingMode.TRAINING)
