@@ -31,7 +31,7 @@ class Classification(nn.Module):
 class Segmentation(nn.Module):
     def __init__(self, activation, feature_num):
         super(Segmentation, self).__init__()
-        self.backbone = HourglassBlockMicro(activation, feature_num)
+        self.backbone = SHNetMicro(activation, feature_num)
 
     def forward(self, input):
         output = self.backbone(input)

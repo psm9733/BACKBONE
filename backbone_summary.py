@@ -11,9 +11,10 @@ TrainingMode = _C._onnx.TrainingMode
 
 if __name__ == "__main__":
     activation = nn.ReLU()
-    input_shape = (3, 416, 416)
+    input_shape = (3, 3264, 2448)
     batch_size = 1
-    model = ResNet50(activation)
+    feature_num = 12
+    model = SHNetMicro(activation, feature_num)
     summary(model, input_shape, batch_size=batch_size, device='cpu')
     dummy_input = Variable(torch.randn(4, input_shape[0], input_shape[1], input_shape[2]))
     torch.onnx.export(model, dummy_input, "model.onnx", training=TrainingMode.TRAINING)

@@ -18,9 +18,9 @@ from torchsummary import summary
 
 def main():
     activation = nn.ReLU()
-    input_shape = (3, 576, 576)
-    batch_size = 2
-    feature_num = 36
+    input_shape = (3, 3264, 2448)
+    batch_size = 1
+    feature_num = 12
     worker = 4
     learning_rate = 1e-3
     weight_decay = 1e-4
