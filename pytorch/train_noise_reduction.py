@@ -6,6 +6,8 @@ import albumentations.pytorch
 import warnings
 import torch.nn as nn
 import utils.pytorch_ssim as pytorch_ssim
+import cv2
+import numpy as np
 from datetime import datetime
 from torch.utils.data import DataLoader
 from utils.utils import weight_initialize
@@ -15,12 +17,13 @@ from utils.saver import Saver
 from utils.utils import make_divisible
 from model.model import Segmentation
 from torchsummary import summary
+import torch.nn.functional as F
 
 def main():
     activation = nn.ReLU()
     input_shape = (3, 2448, 3264)
     batch_size = 2
-    feature_num = 32
+    feature_num = 24
 
     worker = 4
     learning_rate = 1e-3
@@ -33,7 +36,8 @@ def main():
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
     save_dir = "./saved_model/" + timestamp
-
+    if os.path.isdir('./log_img') == False:
+        os.mkdir('./log_img')
     if os.path.isdir('./logs') == False:
         os.mkdir('./logs')
     if os.path.isdir('./saved_model') == False:
@@ -86,6 +90,7 @@ def main():
     # loss_fn = torch.nn.Loss()
     loss_fn = pytorch_ssim.SSIM(window_size = 11)
     logger = Logger(logdir, log_freq)
+    logger_writer = logger.getSummaryWriter()
     saver = Saver(save_dir, save_freq)
 
     # Fit
@@ -100,6 +105,40 @@ def main():
                 x = sample['img'].to(device)
                 y_true = sample['y_true'].to(device)
                 y_pred = model(x)['pred']
+                for index in range(batch_size):
+                    # logger_writer.add_image('input img', x[index], logger.getStep())
+                    # logger_writer.add_image('gt img', y_true[index], logger.getStep())
+                    input_img = torch.clone(x[index])
+                    input_img = torch.squeeze(input_img.to("cpu"))
+                    input_img = torch.permute(input_img, (2, 1, 0))
+                    input_img = (input_img.detach().numpy() * 255).astype(np.uint8)
+                    input_img = cv2.resize(input_img, (416, 416))
+
+                    gt_img = torch.clone(y_true[index])
+                    gt_img = torch.squeeze(gt_img.to("cpu"))
+                    gt_img = torch.permute(gt_img, (2, 1, 0))
+                    gt_img = (gt_img.detach().numpy() * 255).astype(np.uint8)
+                    gt_img = cv2.resize(gt_img, (416, 416))
+
+                    pred_img = torch.clone(y_pred[index])
+                    pred_img = torch.squeeze(pred_img.to("cpu"))
+                    pred_img = torch.permute(pred_img, (2, 1, 0))
+                    pred_img = (pred_img.detach().numpy() * 255).astype(np.uint8)
+                    pred_img = cv2.resize(pred_img, (416, 416))
+
+                    cv2.imwrite("./log_img/input_img_{}.jpg".format(logger.getStep()), input_img)
+                    cv2.imwrite("./log_img/gt_img_{}.jpg".format(logger.getStep()), gt_img)
+                    cv2.imwrite("./log_img/pred_img_{}.jpg".format(logger.getStep()), pred_img)
+                    # logger_writer.add_image('predict img', pred_img, logger.getStep())
+                # for index in range(0, batch_size):
+                    # pre_img = torch.clone(y_pred[0])
+                    # pre_img = torch.squeeze(pre_img.to("cpu"))
+                    # pre_img = torch.permute(pre_img, (1, 2, 0))
+                    # pre_img = pre_img.detach().numpy()
+                    # pre_img = pre_img * 255
+                    # pre_img = pre_img.astype(np.uint8)
+                    # grid = torchvision.utils.make_grid([x[index], y_true[index], y_pred[index]])
+                    # logger_writer.add_image('img', grid, logger.getStep())
                 loss = loss_fn(y_pred, y_true)
                 optimizer.zero_grad()
                 loss.backward()

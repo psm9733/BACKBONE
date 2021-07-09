@@ -14,7 +14,6 @@ from utils.saver import Saver
 from utils.metric import TopKAccuracy
 from utils.utils import make_divisible
 from model.model import Classification
-from torchsummary import summary
 
 def main():
     activation = nn.ReLU()

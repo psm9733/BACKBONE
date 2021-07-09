@@ -15,3 +15,9 @@ class Logger:
 
     def add_scalar(self, tag, x, y):
         self.writer.add_scalar(tag, y, x)
+
+    def getSummaryWriter(self):
+        return self.writer
+
+    def getStep(self):
+        return self.iters

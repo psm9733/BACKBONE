@@ -7,7 +7,7 @@ from torchvision import transforms
 from torchsummary import summary
 import numpy as np
 # Load saved model
-PATH = "./saved_model/20210709021815/model_2999.pth"
+PATH = "./saved_model/20210709113556/model_3999.pth"
 input_shape = (3, 3264, 2440)
 feature_num = 24
 model = Segmentation(nn.ReLU(), feature_num)
@@ -27,7 +27,7 @@ for img_path in tqdm(img_paths):
     result = torch.squeeze(result)
     result = torch.permute(result, (1, 2, 0))
     pre_show = cv2.resize(result.detach().numpy(), (1024, 720))
-    pre_show *= 255.0
+    # pre_show *= 255.
     cv2.imshow("img", show_origin)
     cv2.imshow("pre", pre_show)
     cv2.waitKey()
