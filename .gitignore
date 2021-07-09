@@ -113,3 +113,8 @@ fabric.properties
 
 *.pth
 *.0
+__pycache__
+.idea
+dataset
+*.pth
+*.onnx

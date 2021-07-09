@@ -43,10 +43,10 @@ def main():
     model = Classification(activation, num_classes)
     summary(model, input_shape, batch_size=batch_size, device='cpu')
     weight_initialize(model)
-    ctx = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if ctx == torch.device('cpu'):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if device == torch.device('cpu'):
         warnings.warn('Cannot use CUDA context. Train might be slower!')
-    model.to(ctx)
+    model.to(device)
 
     # data setup
     train_transform = albumentations.Compose([
@@ -90,8 +90,8 @@ def main():
         iterator = tqdm.tqdm(enumerate(trainLoader),
                              total=trainLoader.__len__(), desc='')
         for batch, sample in iterator:
-            x = sample['img'].to(ctx)
-            y_true = sample['y_true'].to(ctx)
+            x = sample['img'].to(device)
+            y_true = sample['y_true'].to(device)
             y_pred = model(x)['pred']
             loss = loss_fn(y_pred, y_true)
             optimizer.zero_grad()
@@ -115,8 +115,8 @@ def main():
                 iterator = tqdm.tqdm(enumerate(validLoader),
                                      total=validLoader.__len__())
                 for batch, sample in iterator:
-                    x = sample['img'].to(ctx)
-                    y_true = sample['y_true'].to(ctx)
+                    x = sample['img'].to(device)
+                    y_true = sample['y_true'].to(device)
                     y_pred = model(x)['pred']
                     loss = loss_fn(y_pred, y_true)
                     logdata['valid_loss'] = loss.item()

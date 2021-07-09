@@ -18,9 +18,10 @@ from torchsummary import summary
 
 def main():
     activation = nn.ReLU()
-    input_shape = (3, 3264, 2448)
-    batch_size = 1
-    feature_num = 12
+    input_shape = (3, 2448, 3264)
+    batch_size = 2
+    feature_num = 32
+
     worker = 4
     learning_rate = 1e-3
     weight_decay = 1e-4
@@ -28,6 +29,7 @@ def main():
     val_freq = 5
     save_freq = 1000
     max_epoch = 100
+    opt_level = 'O1'
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
     save_dir = "./saved_model/" + timestamp
@@ -40,13 +42,16 @@ def main():
         os.mkdir(save_dir)
     if os.path.isdir(logdir) == False:
         os.mkdir(logdir)
+
     model = Segmentation(activation, feature_num)
     summary(model, input_shape, batch_size=batch_size, device='cpu')
     weight_initialize(model)
-    ctx = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if ctx == torch.device('cpu'):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if device == torch.device('cpu'):
         warnings.warn('Cannot use CUDA context. Train might be slower!')
-    model.to(ctx)
+    else:
+        warnings.warn('Single GPU Activate!')
+    model.to(device)
 
     # data setup
     train_transform = albumentations.Compose([
@@ -65,15 +70,15 @@ def main():
         #     albumentations.GaussNoise(p=1)
         # ], p=0.5),
         albumentations.pytorch.ToTensorV2(),
-    ])
+    ], additional_targets={'image1': 'image', 'image2': 'image'})
     valid_transform = albumentations.Compose([
         albumentations.Resize(height=input_shape[1], width=input_shape[2]),
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
-    ])
+    ], additional_targets={'image1': 'image', 'image2': 'image'})
 
-    trainLoader = DataLoader(NoiseReduction('C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove', True, input_shape, train_transform), batch_size=batch_size, shuffle=True, num_workers=worker, drop_last=True)
-    validLoader = DataLoader(NoiseReduction('C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove', False, input_shape, valid_transform), batch_size=batch_size, num_workers=worker)
+    trainLoader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', True, input_shape, train_transform), batch_size=batch_size, shuffle=True, num_workers=worker, drop_last=True)
+    validLoader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', False, input_shape, valid_transform), batch_size=batch_size, num_workers=worker)
 
     # training setup
     optimizer = torch.optim.SGD(model.parameters(), learning_rate, momentum=0.9, weight_decay=weight_decay)
@@ -91,20 +96,21 @@ def main():
         model.train()
         iterator = tqdm.tqdm(enumerate(trainLoader), total=trainLoader.__len__(), desc='')
         for batch, sample in iterator:
-            x = sample['img'].to(ctx)
-            y_true = sample['y_true'].to(ctx)
-            y_pred = model(x)['pred']
-            loss = loss_fn(y_pred, y_true)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
-            logdata['train_loss'] = loss.item()
-            logdata['lr'] = optimizer.param_groups[0]['lr']
-            logger.step(logdata)
-            saver.step(model)
-            iterator.set_description("epoch: {0}, iter: {1}/{2}, loss: {3:0.4f}".format(
-                epochs, batch, trainLoader.__len__(), logdata['train_loss']))
+            with torch.cuda.amp.autocast():
+                x = sample['img'].to(device)
+                y_true = sample['y_true'].to(device)
+                y_pred = model(x)['pred']
+                loss = loss_fn(y_pred, y_true)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                scheduler.step()
+                logdata['train_loss'] = loss.item()
+                logdata['lr'] = optimizer.param_groups[0]['lr']
+                logger.step(logdata)
+                saver.step(model)
+                iterator.set_description("epoch: {0}, iter: {1}/{2}, loss: {3:0.4f}".format(
+                    epochs, batch, trainLoader.__len__(), logdata['train_loss']))
 
         if epochs % val_freq == val_freq - 1:
             model.eval()
@@ -112,8 +118,8 @@ def main():
                 iterator = tqdm.tqdm(enumerate(validLoader),
                                      total=validLoader.__len__())
                 for batch, sample in iterator:
-                    x = sample['img'].to(ctx)
-                    y_true = sample['y_true'].to(ctx)
+                    x = sample['img'].to(device)
+                    y_true = sample['y_true'].to(device)
                     y_pred = model(x)['pred']
                     loss = loss_fn(y_pred, y_true)
                     logdata['valid_loss'] = loss.item()

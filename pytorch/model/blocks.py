@@ -124,7 +124,7 @@ class HourglassBlock(nn.Module):          #StackedHourGlass
         self.intermediateBlock4 = ResidualBlock(in_channels=int(feature_num / 4), activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), int(feature_num)), kernel_size=(3, 3), stride=(1, 1, 1), padding='same')
         self.intermediateBlock5 = ResidualBlock(in_channels=3, activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 1, 1), padding='same')
 
-        self.output = Conv2D_BN(feature_num, activation=activation, out_channels=3, kernel_size=(7, 7), stride = 1, padding='same')
+        self.output = Conv2D_BN(feature_num, activation=activation, out_channels=feature_num, kernel_size=(7, 7), stride = 1, padding='same')
 
     def forward(self, input):
         stem_out = self.stemblock(input)
@@ -178,7 +178,7 @@ class HourglassBlockTiny(nn.Module):          #StackedHourGlass
         self.intermediateBlock3 = ResidualBlock(in_channels=int(feature_num / 4), activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), int(feature_num)), kernel_size=(3, 3), stride=(1, 1, 1), padding='same')
         self.intermediateBlock4 = ResidualBlock(in_channels=3, activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 1, 1), padding='same')
 
-        self.output = Conv2D_BN(feature_num, activation=activation, out_channels=3, kernel_size=(7, 7), stride = 1, padding='same')
+        self.output = Conv2D_BN(feature_num, activation=activation, out_channels=feature_num, kernel_size=(7, 7), stride = 1, padding='same')
 
     def forward(self, input):
         stem_out = self.stemblock(input)
@@ -223,7 +223,7 @@ class HourglassBlockMicro(nn.Module):          #StackedHourGlass
         self.intermediateBlock2 = ResidualBlock(in_channels=int(feature_num / 4), activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), int(feature_num)), kernel_size=(3, 3), stride=(1, 1, 1), padding='same')
         self.intermediateBlock3 = ResidualBlock(in_channels=3, activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 1, 1), padding='same')
 
-        self.output = Conv2D_BN(feature_num, activation=activation, out_channels=3, kernel_size=(7, 7), stride = 1, padding='same')
+        self.output = Conv2D_BN(feature_num, activation=activation, out_channels=feature_num, kernel_size=(3, 3), stride = 1, padding='same')
 
     def forward(self, input):
         stem_out = self.stemblock(input)

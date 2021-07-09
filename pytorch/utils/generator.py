@@ -99,8 +99,9 @@ class NoiseReduction(Dataset):
         gt_img = cv2.imread(gt_imgpath)
         gt_img = cv2.resize(gt_img, (self.input_shape[1], self.input_shape[2]))
         if self.transform:
-            x = self.transform(image=input_img)['image']
-            y = self.transform(image=gt_img)['image']
+            transformed = self.transform(image=input_img, image1=input_img, image2=gt_img)
+            x = transformed['image1']
+            y = transformed['image2']
         else:
             x = transforms.ToTensor(input_img)
             y = transforms.ToTensor(gt_img)
@@ -108,7 +109,7 @@ class NoiseReduction(Dataset):
 
 
 if __name__ == '__main__':
-    input_shape = (3, 416, 416)
+    input_shape = (3, 1280, 720)
     transform = albumentations.Compose([
         albumentations.Resize(height=input_shape[1], width=input_shape[2]),
         albumentations.Normalize(0, 1),
@@ -117,23 +118,27 @@ if __name__ == '__main__':
             albumentations.VerticalFlip(p=0.5),
             albumentations.Rotate(-90, 90),
             albumentations.RandomResizedCrop(height=input_shape[1], width=input_shape[2]),
-            albumentations.ColorJitter(),
+            # albumentations.ColorJitter(),
         ], 3, p=0.5),
-        albumentations.OneOf([
-            albumentations.MotionBlur(p=1),
-            albumentations.OpticalDistortion(p=1),
-            albumentations.GaussNoise(p=1)
-        ], p=0.5),
+        # albumentations.OneOf([
+        #     albumentations.MotionBlur(p=1),
+        #     albumentations.OpticalDistortion(p=1),
+        #     albumentations.GaussNoise(p=1)
+        # ], p=0.5),
         albumentations.pytorch.ToTensorV2(),
-    ])
+    ], additional_targets={'image1': 'image', 'image2': 'image'})
 
     # loader = DataLoader(TinyImageNet('C:/Users/sangmin/Desktop/backbone/dataset/tiny-imagenet-200', True, True, transform), batch_size=128, shuffle=True, num_workers=4)
-    loader = DataLoader(NoiseReduction('C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove', True, False, transform), batch_size=128, shuffle=True, num_workers=4, drop_last=True)
+    loader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', True, input_shape, transform), batch_size=1, num_workers=1)
     for i in range(2):
         print('epoch', i)
         for batch, sample in tqdm.tqdm(enumerate(loader), total=loader.__len__()):
             img = sample['img'].numpy()[0]
+            gt_img = sample['y_true'].numpy()[0]
             img = np.transpose(img, (1, 2, 0))
+            gt_img = np.transpose(gt_img, (1, 2, 0))
             img = cv2.resize(img, (input_shape[1], input_shape[2]))
-            cv2.imshow("test", img)
+            gt_img = cv2.resize(gt_img, (input_shape[1], input_shape[2]))
+            cv2.imshow("input_img", img)
+            cv2.imshow("gt_img", gt_img)
             cv2.waitKey()

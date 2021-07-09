@@ -1,30 +1,33 @@
 # Completed Backbone Models
 > ### ResNet
->   > ##### ResNet26
->   > ##### ResNet50
+>   > ##### ResNet26(Pytorch)
+>   > ##### ResNet50(Pytorch)
 
 > ### ResNext
->   > ##### ResNext14
->   > ##### ResNext26
->   > ##### ResNext50
+>   > ##### ResNext14(Pytorch)
+>   > ##### ResNext26(Pytorch)
+>   > ##### ResNext50(Pytorch)
 
 > ### DenseNet
->   > ##### DenseNet32
->   > ##### DenseNet64
+>   > ##### DenseNet32(Pytorch)
+>   > ##### DenseNet64(Pytorch)
 
 > ### DenseNext
->   > ##### DenseNext32
->   > ##### DenseNext64
+>   > ##### DenseNext32(Pytorch)
+>   > ##### DenseNext64(Pytorch)
 
 > ### SHNet(Stacked Hourglass Network)
+>   >   ##### SHNet(Pytorch)
+>   >   ##### SHNetTiny(Pytorch)
+>   >   ##### SHNetMicro(Pytorch)
 
 # Completed Blocks
-> ### StemBlock
+> ### StemBlock(Pytorch)
 
-> ### ResidualBlock
+> ### ResidualBlock(Pytorch)
 
-> ### DenseBlock
+> ### DenseBlock(Pytorch)
 
 > ### HourglassBlock, HourglassBlockTiny, HourglassBlockMicro
->   > ##### HourglassUpBlock
->   > ##### HourglassDownBlock
+>   > ##### HourglassUpBlock(Pytorch)
+>   > ##### HourglassDownBlock(Pytorch)

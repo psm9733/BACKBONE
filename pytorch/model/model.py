@@ -32,9 +32,11 @@ class Segmentation(nn.Module):
     def __init__(self, activation, feature_num):
         super(Segmentation, self).__init__()
         self.backbone = SHNetMicro(activation, feature_num)
+        self.segmentation_head = Conv2D_BN(feature_num, nn.Sigmoid(), 3, (1, 1))
 
     def forward(self, input):
         output = self.backbone(input)
+        output = self.segmentation_head(output)
         return {'pred': output}
 
 if __name__ == "__main__":
