@@ -18,8 +18,6 @@
 
 > ### SHNet(Stacked Hourglass Network)
 >   >   ##### SHNet(Pytorch)
->   >   ##### SHNetTiny(Pytorch)
->   >   ##### SHNetMicro(Pytorch)
 
 # Completed Blocks
 > ### StemBlock(Pytorch)
@@ -28,6 +26,6 @@
 
 > ### DenseBlock(Pytorch)
 
-> ### HourglassBlock, HourglassBlockTiny, HourglassBlockMicro
+> ### HourglassBlock
 >   > ##### HourglassUpBlock(Pytorch)
 >   > ##### HourglassDownBlock(Pytorch)

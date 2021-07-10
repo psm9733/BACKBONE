@@ -21,9 +21,9 @@ import torch.nn.functional as F
 
 def main():
     activation = nn.ReLU()
-    input_shape = (3, 2448, 3264)
-    batch_size = 2
-    feature_num = 24
+    input_shape = (3, 384, 512)
+    batch_size = 16
+    feature_num = 64
 
     worker = 4
     learning_rate = 1e-3
@@ -31,7 +31,7 @@ def main():
     log_freq = 100
     val_freq = 5
     save_freq = 1000
-    max_epoch = 100
+    max_epoch = 1000
     opt_level = 'O1'
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
@@ -108,27 +108,28 @@ def main():
                 for index in range(batch_size):
                     # logger_writer.add_image('input img', x[index], logger.getStep())
                     # logger_writer.add_image('gt img', y_true[index], logger.getStep())
-                    input_img = torch.clone(x[index])
-                    input_img = torch.squeeze(input_img.to("cpu"))
-                    input_img = torch.permute(input_img, (2, 1, 0))
-                    input_img = (input_img.detach().numpy() * 255).astype(np.uint8)
-                    input_img = cv2.resize(input_img, (416, 416))
+                    if logger.getStep() % 100 == 0:
+                        input_img = torch.clone(x[index])
+                        input_img = torch.squeeze(input_img.to("cpu"))
+                        input_img = torch.permute(input_img, (2, 1, 0))
+                        input_img = (input_img.detach().numpy() * 255).astype(np.uint8)
+                        input_img = cv2.resize(input_img, (416, 416))
 
-                    gt_img = torch.clone(y_true[index])
-                    gt_img = torch.squeeze(gt_img.to("cpu"))
-                    gt_img = torch.permute(gt_img, (2, 1, 0))
-                    gt_img = (gt_img.detach().numpy() * 255).astype(np.uint8)
-                    gt_img = cv2.resize(gt_img, (416, 416))
+                        gt_img = torch.clone(y_true[index])
+                        gt_img = torch.squeeze(gt_img.to("cpu"))
+                        gt_img = torch.permute(gt_img, (2, 1, 0))
+                        gt_img = (gt_img.detach().numpy() * 255).astype(np.uint8)
+                        gt_img = cv2.resize(gt_img, (416, 416))
 
-                    pred_img = torch.clone(y_pred[index])
-                    pred_img = torch.squeeze(pred_img.to("cpu"))
-                    pred_img = torch.permute(pred_img, (2, 1, 0))
-                    pred_img = (pred_img.detach().numpy() * 255).astype(np.uint8)
-                    pred_img = cv2.resize(pred_img, (416, 416))
+                        pred_img = torch.clone(y_pred[index])
+                        pred_img = torch.squeeze(pred_img.to("cpu"))
+                        pred_img = torch.permute(pred_img, (2, 1, 0))
+                        pred_img = (pred_img.detach().numpy() * 255).astype(np.uint8)
+                        pred_img = cv2.resize(pred_img, (416, 416))
 
-                    cv2.imwrite("./log_img/input_img_{}.jpg".format(logger.getStep()), input_img)
-                    cv2.imwrite("./log_img/gt_img_{}.jpg".format(logger.getStep()), gt_img)
-                    cv2.imwrite("./log_img/pred_img_{}.jpg".format(logger.getStep()), pred_img)
+                        cv2.imwrite("./log_img/input_img_{}.jpg".format(logger.getStep()), input_img)
+                        cv2.imwrite("./log_img/gt_img_{}.jpg".format(logger.getStep()), gt_img)
+                        cv2.imwrite("./log_img/pred_img_{}.jpg".format(logger.getStep()), pred_img)
                     # logger_writer.add_image('predict img', pred_img, logger.getStep())
                 # for index in range(0, batch_size):
                     # pre_img = torch.clone(y_pred[0])
