@@ -17,21 +17,22 @@ from utils.saver import Saver
 from utils.utils import make_divisible
 from model.model import Segmentation
 from torchsummary import summary
+from adamp import *
 import torch.nn.functional as F
 
 def main():
     activation = nn.ReLU()
     input_shape = (3, 384, 512)
-    batch_size = 16
-    feature_num = 64
+    batch_size = 8
+    feature_num = 512
 
-    worker = 4
-    learning_rate = 1e-3
+    worker = 1
+    learning_rate = 1e-2
     weight_decay = 1e-4
     log_freq = 100
     val_freq = 5
-    save_freq = 1000
-    max_epoch = 1000
+    save_freq = 100
+    max_epoch = 2000
     opt_level = 'O1'
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
@@ -85,10 +86,11 @@ def main():
     validLoader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', False, input_shape, valid_transform), batch_size=batch_size, num_workers=worker)
 
     # training setup
-    optimizer = torch.optim.SGD(model.parameters(), learning_rate, momentum=0.9, weight_decay=weight_decay)
+    # optimizer = AdamP(model.parameters(), learning_rate)
+    optimizer = SGDP(model.parameters(), learning_rate, momentum=0.9, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, learning_rate / 10, learning_rate, mode='triangular', step_size_up=trainLoader.__len__() * 4)
-    # loss_fn = torch.nn.Loss()
-    loss_fn = pytorch_ssim.SSIM(window_size = 11)
+    loss_fn = torch.nn.MSELoss()
+    # loss_fn = pytorch_ssim.SSIM(window_size = 11)
     logger = Logger(logdir, log_freq)
     logger_writer = logger.getSummaryWriter()
     saver = Saver(save_dir, save_freq)

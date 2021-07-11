@@ -11,3 +11,14 @@ class SHNet(nn.Module):          #StackedHourGlass
         output = self.stem(input)
         output = self.block1_end(output)
         return output
+
+class DenseSHNet(nn.Module):          #StackedHourGlass
+    def __init__(self, activation, mode = "", bias = True):
+        super(DenseSHNet, self).__init__()
+        self.stem = StemBlock(in_channels=3, activation=activation, out_channels=(32, 64), kernel_size=(3, 3), stride=(2, 1), padding='same')
+        self.block1_end = DenseHourglassBlock(activation, mode)
+
+    def forward(self, input):
+        output = self.stem(input)
+        output = self.block1_end(output)
+        return output
