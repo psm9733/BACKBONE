@@ -18,12 +18,16 @@ from utils.utils import make_divisible
 from model.model import Segmentation
 from torchsummary import summary
 from adamp import *
+import os
 import torch.nn.functional as F
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1"
 
 def main():
     activation = nn.ReLU()
     input_shape = (3, 384, 512)
-    batch_size = 8
+    batch_size = 16
     feature_num = 512
 
     worker = 1
@@ -49,7 +53,8 @@ def main():
         os.mkdir(logdir)
 
     model = Segmentation(activation, feature_num)
-    summary(model, input_shape, batch_size=batch_size, device='cpu')
+    model = nn.DataParallel(model).to("cuda")
+    # summary(model, input_shape, batch_size=batch_size, device='cpu')
     weight_initialize(model)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if device == torch.device('cpu'):
@@ -91,6 +96,7 @@ def main():
     scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, learning_rate / 10, learning_rate, mode='triangular', step_size_up=trainLoader.__len__() * 4)
     loss_fn = torch.nn.MSELoss()
     # loss_fn = pytorch_ssim.SSIM(window_size = 11)
+
     logger = Logger(logdir, log_freq)
     logger_writer = logger.getSummaryWriter()
     saver = Saver(save_dir, save_freq)
