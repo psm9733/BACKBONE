@@ -13,7 +13,7 @@ from utils.logger import Logger
 from utils.saver import Saver
 from utils.metric import TopKAccuracy
 from utils.utils import make_divisible
-from model.model import Classification
+from network.model import Classification
 
 def main():
     activation = nn.ReLU()

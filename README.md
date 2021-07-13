@@ -32,5 +32,3 @@
 > ### HourglassBlock
 >   > ##### HourglassUpBlock(Pytorch)
 >   > ##### HourglassDownBlock(Pytorch)
->   > ##### DenseHourglassUpBlock(Pytorch)
->   > ##### DenseHourglassDownBlock(Pytorch)

@@ -15,23 +15,24 @@ from utils.generator import NoiseReduction
 from utils.logger import Logger
 from utils.saver import Saver
 from utils.utils import make_divisible
-from model.model import Segmentation
+from network.model import Segmentation
 from torchsummary import summary
 from adamp import *
 import os
 import torch.nn.functional as F
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0, 1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 def main():
-    activation = nn.ReLU()
-    input_shape = (3, 384, 512)
-    batch_size = 16
-    feature_num = 512
+    activation = nn.LeakyReLU()
+    input_shape = (3, 384, 384)
+    batch_size = 8
+    feature_num = 256
 
     worker = 1
-    learning_rate = 1e-2
+    max_lr = 1e-3
+    min_lr = 1e-4
     weight_decay = 1e-4
     log_freq = 100
     val_freq = 5
@@ -91,9 +92,9 @@ def main():
     validLoader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', False, input_shape, valid_transform), batch_size=batch_size, num_workers=worker)
 
     # training setup
-    # optimizer = AdamP(model.parameters(), learning_rate)
-    optimizer = SGDP(model.parameters(), learning_rate, momentum=0.9, weight_decay=weight_decay)
-    scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, learning_rate / 10, learning_rate, mode='triangular', step_size_up=trainLoader.__len__() * 4)
+    optimizer = AdamP(model.parameters(), min_lr)
+    # optimizer = SGDP(model.parameters(), learning_rate, momentum=0.9, weight_decay=weight_decay)
+    # scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, learning_rate / 10, learning_rate, mode='triangular', step_size_up=trainLoader.__len__() * 4)
     loss_fn = torch.nn.MSELoss()
     # loss_fn = pytorch_ssim.SSIM(window_size = 11)
 
@@ -103,11 +104,13 @@ def main():
 
     # Fit
     logdata = dict()
-    max_epoch = make_divisible(max_epoch, 4)
+    # max_epoch = make_divisible(max_epoch, 4)
     print('max epoch: ', max_epoch)
     for epochs in range(max_epoch):
         model.train()
         iterator = tqdm.tqdm(enumerate(trainLoader), total=trainLoader.__len__(), desc='')
+        step_length = len(iterator)
+        scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=min_lr, max_lr=max_lr, step_size_up=(10 * step_length)/batch_size, step_size_down=None, cycle_momentum = False, mode='exp_range', gamma=0.995, verbose=True)
         for batch, sample in iterator:
             with torch.cuda.amp.autocast():
                 x = sample['img'].to(device)
@@ -116,28 +119,29 @@ def main():
                 for index in range(batch_size):
                     # logger_writer.add_image('input img', x[index], logger.getStep())
                     # logger_writer.add_image('gt img', y_true[index], logger.getStep())
-                    if logger.getStep() % 100 == 0:
+                    if logger.getStep() % 10 == 0:
                         input_img = torch.clone(x[index])
                         input_img = torch.squeeze(input_img.to("cpu"))
                         input_img = torch.permute(input_img, (2, 1, 0))
                         input_img = (input_img.detach().numpy() * 255).astype(np.uint8)
-                        input_img = cv2.resize(input_img, (416, 416))
+                        input_img = cv2.resize(input_img, (384, 384))
 
                         gt_img = torch.clone(y_true[index])
                         gt_img = torch.squeeze(gt_img.to("cpu"))
                         gt_img = torch.permute(gt_img, (2, 1, 0))
                         gt_img = (gt_img.detach().numpy() * 255).astype(np.uint8)
-                        gt_img = cv2.resize(gt_img, (416, 416))
+                        gt_img = cv2.resize(gt_img, (384, 384))
 
                         pred_img = torch.clone(y_pred[index])
+                        pred_img = torch.clip(pred_img, 0, 1)
                         pred_img = torch.squeeze(pred_img.to("cpu"))
                         pred_img = torch.permute(pred_img, (2, 1, 0))
                         pred_img = (pred_img.detach().numpy() * 255).astype(np.uint8)
-                        pred_img = cv2.resize(pred_img, (416, 416))
+                        pred_img = cv2.resize(pred_img, (384, 384))
 
-                        cv2.imwrite("./log_img/input_img_{}.jpg".format(logger.getStep()), input_img)
-                        cv2.imwrite("./log_img/gt_img_{}.jpg".format(logger.getStep()), gt_img)
-                        cv2.imwrite("./log_img/pred_img_{}.jpg".format(logger.getStep()), pred_img)
+                        cv2.imwrite("./log_img/{}_input_img.jpg".format(logger.getStep()), input_img)
+                        cv2.imwrite("./log_img/{}_gt_img.jpg".format(logger.getStep()), gt_img)
+                        cv2.imwrite("./log_img/{}_pred_img.jpg".format(logger.getStep()), pred_img)
                     # logger_writer.add_image('predict img', pred_img, logger.getStep())
                 # for index in range(0, batch_size):
                     # pre_img = torch.clone(y_pred[0])

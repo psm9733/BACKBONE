@@ -2,7 +2,7 @@ import torch
 import cv2
 from glob import glob
 from tqdm import tqdm
-from model.model import *
+from network.model import *
 from torchvision import transforms
 from torchsummary import summary
 
