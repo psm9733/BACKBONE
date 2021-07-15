@@ -15,10 +15,11 @@ from utils.generator import NoiseReduction
 from utils.logger import Logger
 from utils.saver import Saver
 from utils.utils import make_divisible
-from network.model import Segmentation
+from network.model import DeNoising
 from torchsummary import summary
 from adamp import *
 import os
+
 import torch.nn.functional as F
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -27,18 +28,17 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 def main():
     activation = nn.LeakyReLU()
     input_shape = (3, 384, 384)
-    batch_size = 8
-    feature_num = 256
+    batch_size = 6
+    feature_num = 512
 
     worker = 1
-    max_lr = 1e-3
-    min_lr = 1e-4
+    max_lr = 1e-2
+    min_lr = 1e-3
     weight_decay = 1e-4
     log_freq = 100
     val_freq = 5
     save_freq = 100
     max_epoch = 2000
-    opt_level = 'O1'
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
     save_dir = "./saved_model/" + timestamp
@@ -53,8 +53,8 @@ def main():
     if os.path.isdir(logdir) == False:
         os.mkdir(logdir)
 
-    model = Segmentation(activation, feature_num)
-    model = nn.DataParallel(model).to("cuda")
+    model = DeNoising(activation, feature_num)
+    # model = nn.DataParallel(model).to("cuda")
     # summary(model, input_shape, batch_size=batch_size, device='cpu')
     weight_initialize(model)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

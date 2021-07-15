@@ -75,9 +75,9 @@ class HourglassUpBlock(nn.Module):
         return output
 
 class HourglassBlock(nn.Module):          #StackedHourGlass
-    def __init__(self, activation, feature_num = 256, mode = "", bias = True):
+    def __init__(self, activation, in_feature, feature_num = 256, mode = "", bias = True):
         super(HourglassBlock, self).__init__()
-        self.downblock1 = HourglassDownBlock(in_channels=int(feature_num / 4), activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 2, 1), padding='same', bias=bias)
+        self.downblock1 = HourglassDownBlock(in_channels=in_feature, activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 2, 1), padding='same', bias=bias)
         self.downblock2 = HourglassDownBlock(in_channels=feature_num, activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(3, 3), stride=(1, 2, 1), padding='same', bias=bias)
 
         self.sameblock = ResidualBlock(in_channels=feature_num, activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), int(feature_num)), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', bias=bias)
