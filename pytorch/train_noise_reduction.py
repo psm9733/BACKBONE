@@ -23,13 +23,13 @@ import os
 import torch.nn.functional as F
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def main():
     activation = nn.LeakyReLU()
-    input_shape = (3, 384, 384)
-    batch_size = 6
-    feature_num = 512
+    input_shape = (3, 256, 256)
+    batch_size = 4
+    feature_num = 128
 
     worker = 1
     max_lr = 1e-2
@@ -53,7 +53,7 @@ def main():
     if os.path.isdir(logdir) == False:
         os.mkdir(logdir)
 
-    model = DeNoising(activation, feature_num)
+    model = DeNoising(activation, feature_num, groups=32)
     # model = nn.DataParallel(model).to("cuda")
     # summary(model, input_shape, batch_size=batch_size, device='cpu')
     weight_initialize(model)
@@ -88,8 +88,8 @@ def main():
         albumentations.pytorch.ToTensorV2(),
     ], additional_targets={'image1': 'image', 'image2': 'image'})
 
-    trainLoader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', True, input_shape, train_transform), batch_size=batch_size, shuffle=True, num_workers=worker, drop_last=True)
-    validLoader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', False, input_shape, valid_transform), batch_size=batch_size, num_workers=worker)
+    trainLoader = DataLoader(NoiseReduction('C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove', True, input_shape, train_transform), batch_size=batch_size, shuffle=True, num_workers=worker, drop_last=True)
+    validLoader = DataLoader(NoiseReduction('C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove', False, input_shape, valid_transform), batch_size=batch_size, num_workers=worker)
 
     # training setup
     optimizer = AdamP(model.parameters(), min_lr)
@@ -115,7 +115,9 @@ def main():
             with torch.cuda.amp.autocast():
                 x = sample['img'].to(device)
                 y_true = sample['y_true'].to(device)
-                y_pred = model(x)['pred']
+                y_pred_hg1 = model(x)['hg1_loss']
+                y_pred_hg2 = model(x)['hg2_loss']
+                y_pred_hg3 = model(x)['hg3_loss']
                 for index in range(batch_size):
                     # logger_writer.add_image('input img', x[index], logger.getStep())
                     # logger_writer.add_image('gt img', y_true[index], logger.getStep())
@@ -132,7 +134,7 @@ def main():
                         gt_img = (gt_img.detach().numpy() * 255).astype(np.uint8)
                         gt_img = cv2.resize(gt_img, (384, 384))
 
-                        pred_img = torch.clone(y_pred[index])
+                        pred_img = torch.clone(y_pred_hg3[index])
                         pred_img = torch.clip(pred_img, 0, 1)
                         pred_img = torch.squeeze(pred_img.to("cpu"))
                         pred_img = torch.permute(pred_img, (2, 1, 0))
@@ -152,7 +154,9 @@ def main():
                     # pre_img = pre_img.astype(np.uint8)
                     # grid = torchvision.utils.make_grid([x[index], y_true[index], y_pred[index]])
                     # logger_writer.add_image('img', grid, logger.getStep())
-                loss = loss_fn(y_pred, y_true)
+                loss = loss_fn(y_pred_hg1, y_true)
+                loss += loss_fn(y_pred_hg2, y_true)
+                loss += loss_fn(y_pred_hg3, y_true)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -172,8 +176,12 @@ def main():
                 for batch, sample in iterator:
                     x = sample['img'].to(device)
                     y_true = sample['y_true'].to(device)
-                    y_pred = model(x)['pred']
-                    loss = loss_fn(y_pred, y_true)
+                    y_pred_hg1 = model(x)['hg1_loss']
+                    y_pred_hg2 = model(x)['hg2_loss']
+                    y_pred_hg3 = model(x)['hg3_loss']
+                    loss = loss_fn(y_pred_hg1, y_true)
+                    loss += loss_fn(y_pred_hg2, y_true)
+                    loss += loss_fn(y_pred_hg3, y_true)
                     logdata['valid_loss'] = loss.item()
                     iterator.set_description("epoch: {0}, iter: {1}/{2}, loss: {3:0.4f}".format(
                         epochs, batch, trainLoader.__len__(), logdata['train_loss']))

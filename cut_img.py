@@ -26,9 +26,9 @@ def cut_img(image_path, target_dir, stride):
 
 if __name__ == "__main__":
     stride = 256
-    input_dir = "/home/fssv1/sangmin/backbone/dataset/lg_noise_remove/train_input_img"
-    input_target_dir = "/home/fssv1/sangmin/backbone/dataset/lg_noise_remove/train_input_img_crop"
-    label_target_dir = "/home/fssv1/sangmin/backbone/dataset/lg_noise_remove/train_label_img_crop"
+    input_dir = "C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove/train_input_img"
+    input_target_dir = "C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove/train_input_img_crop"
+    label_target_dir = "C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove/train_label_img_crop"
     img_list = glob(input_dir + "/*.png")
     for image_path in tqdm(img_list):
         cut_img(image_path, input_target_dir, stride)

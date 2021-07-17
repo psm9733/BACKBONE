@@ -28,17 +28,14 @@ class Classification(nn.Module):
         return {'pred': output}
 
 class DeNoising(nn.Module):
-    def __init__(self, activation, feature_num):
+    def __init__(self, activation, feature_num, groups):
         super(DeNoising, self).__init__()
-        self.backbone = SHNet(activation, feature_num, mode = "")
-        self.segmentation_head = Conv2D_BN(self.backbone.getOutputChannel(), None, 3, (1, 1))
+        self.backbone = SHNet(activation, feature_num, groups = groups, mode = "")
         # self.backbone = UNet(n_channels=3, n_classes=3, bilinear=True)
 
     def forward(self, input):
-        output = self.backbone(input)
-        output = self.segmentation_head(output)
-        output += input
-        return {'pred': output}
+        output1, output2, output3 = self.backbone(input)
+        return {'hg1_loss': output1, 'hg2_loss': output2, 'hg3_loss': output3}
 
 class Yolov4Micro(nn.Module):
     def __init__(self, activation, classes):
