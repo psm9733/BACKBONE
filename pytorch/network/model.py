@@ -34,8 +34,8 @@ class DeNoising(nn.Module):
         # self.backbone = UNet(n_channels=3, n_classes=3, bilinear=True)
 
     def forward(self, input):
-        output1, output2, output3 = self.backbone(input)
-        return {'hg1_loss': output1, 'hg2_loss': output2, 'hg3_loss': output3}
+        output1, output2 = self.backbone(input)
+        return {'hg1_loss': output1, 'hg2_loss': output2}
 
 class Yolov4Micro(nn.Module):
     def __init__(self, activation, classes):

@@ -1,0 +1,5 @@
+classes = 1
+train  = /home/fsai2/sangmin/darknet/face_detection/train.txt
+valid  = /home/fsai2/sangmin/darknet/face_detection/valid.txt
+names = C:/pis/model/face.names
+backup = /home/fsai2/sangmin/darknet/face_detection/backups_20210609_yolov4_micro_l3
