@@ -2,6 +2,7 @@ import torch
 from network.common.layers import *
 from network.shnet.blocks import *
 from network.common.modules import SAM
+import torch.nn as nn
 
 class SHNet(nn.Module):          #StackedHourGlass
     def __init__(self, activation, feature_num = 512, groups = 32, mode = "", bias = True):

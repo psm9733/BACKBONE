@@ -88,18 +88,18 @@ class NoiseReduction(Dataset):
                 label = data.replace("train_input_img_crop", "train_label_img_crop").replace("input", "label")
                 self.train_list[data] = label
         # if is_train:
-        #     self.data = glob.glob(root_dir + '/train_input_img/**/*.png', recursive=True)
+        #     self.data = glob.glob(root_dir + '/train_input_img_test/**/*.png', recursive=True)
         #     self.train_list = dict()
         #     for data in self.data:
         #         data = data.replace("\\", "/")
-        #         label = data.replace("train_input_img", "train_label_img").replace("input", "label")
+        #         label = data.replace("train_input_img_test", "train_label_img_test").replace("input", "label")
         #         self.train_list[data] = label
         # else:
-        #     self.data = glob.glob(root_dir + '/train_input_img/**/*.png', recursive=True)
+        #     self.data = glob.glob(root_dir + '/train_input_img_test/**/*.png', recursive=True)
         #     self.train_list = dict()
         #     for data in self.data:
         #         data = data.replace("\\", "/")
-        #         label = data.replace("train_input_img", "train_label_img").replace("input", "label")
+        #         label = data.replace("train_input_img_test", "train_label_img_test").replace("input", "label")
         #         self.train_list[data] = label
 
     def __len__(self):

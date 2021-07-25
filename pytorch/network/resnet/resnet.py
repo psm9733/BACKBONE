@@ -1,5 +1,6 @@
 from network.common.layers import *
 from network.resnet.blocks import *
+import torch.nn as nn
 
 class ResNet26(nn.Module):
     def __init__(self, activation, bias = True):

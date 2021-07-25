@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from network.common.layers import Conv2D_BN
 from utils.utils import getPadding
+import torch.nn as nn
 
 class SAM(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride=1, padding='same', groups=1, dilation=1, bias=True, padding_mode='zeros'):

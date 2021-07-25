@@ -29,14 +29,14 @@ def predict(model, img_path, input_shape, stride=128):
             voting_mask[h:h+crop.shape[0], w:w+crop.shape[1],:] += 1
     result_img = result_img / voting_mask
     result_img = result_img.astype(np.uint8)
-    cv2.imshow("origin", img)
-    cv2.imshow("result", result_img)
-    cv2.waitKey()
+    # cv2.imshow("origin", img)
+    # cv2.imshow("result", result_img)
+    # cv2.waitKey()
     return result_img
 
 if __name__ == "__main__":
     # Load saved model
-    PATH = "./saved_model/20210721150908/model_2499.pth"
+    PATH = "./saved_model/20210722160017/model_9799.pth"
     input_shape = (3, 256, 256)
     output_shape = (3, 3264, 2448)
     feature_num = 256

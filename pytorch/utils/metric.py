@@ -1,30 +1,27 @@
+import numpy as np
 import torch
 
-class TopKAccuracy:
-    def __init__(self, one_hot, topK=[1, 5]) -> None:
-        self.one_hot = one_hot
-        self.topK = topK
-        self.samples = 0
-        self.accuracy = dict()
-        for k in self.topK:
-            self.accuracy[k] = 0
+class TopkAccuracy:
+    def __init__(self, topk=1):
+        self.topk = topk
+        self.acc = []
 
-    def step(self, y_pred, y_true):
-        maxK = max(self.topK)
-        if self.one_hot:
-            pass
-        else:
-            pred = torch.topk(y_pred, maxK, 1).indices
-            pred = pred.t()
-            correct = pred.eq(y_true.view(1, -1).expand_as(pred))
-            for k in self.topK:
-                acc = correct[:k].unsqueeze(0).sum()
-                self.accuracy[k] = (
-                    self.accuracy[k] * self.samples + acc) / (self.samples + y_pred.size()[0])
-        self.samples += y_pred.size()[0]
+    def calAcc(self, y_true, y_pred):
+        batch_size = y_pred.size(0)
+        correct_count = 0
+        for index in range(batch_size):
+            gt_cls = y_true[index].item()
+            pred = y_pred[index,:]
+            pred_cls_list = torch.argsort(pred, dim=0, descending=True)
+            for pred_cls in pred_cls_list[:self.topk]:
+                if pred_cls.item() == gt_cls:
+                    correct_count += 1
+                    break
+        acc = correct_count / batch_size
+        self.acc.append(acc)
+
+    def getAcc(self):
+        return np.array(self.acc).mean()
 
     def clear(self):
-        self.samples = 0
-        self.accuracy = dict()
-        for k in self.topK:
-            self.accuracy[k] = 0
+        self.acc = []

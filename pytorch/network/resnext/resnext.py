@@ -1,5 +1,6 @@
 from network.common.layers import *
 from network.resnext.blocks import *
+import torch.nn as nn
 
 class ResNext14(nn.Module):
     def __init__(self, activation, groups=32, bias=True):

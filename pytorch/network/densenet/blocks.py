@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from network.common.layers import Conv2D_BN
+import torch.nn as nn
 
 class StemBlock(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride, padding = 'same', groups = 1, dilation=1, bias = True):

@@ -1,5 +1,6 @@
 from network.common.layers import *
 from network.densenet.blocks import *
+import torch.nn as nn
 
 class DenseNet32(nn.Module):
     def __init__(self, activation, bias=True):
