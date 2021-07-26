@@ -30,14 +30,12 @@ def main():
     batch_size = 8
     worker = 4
     max_lr = 1e-3
-    min_lr = 1e-4
+    min_lr = 1e-5
     weight_decay = 1e-4
     max_epochs = 200
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
     save_dir = "./saved_model/" + timestamp
-    if os.path.isdir('./log_img') == False:
-        os.mkdir('./log_img')
     if os.path.isdir('./logs') == False:
         os.mkdir('./logs')
     if os.path.isdir('./saved_model') == False:
@@ -77,7 +75,7 @@ def main():
     validLoader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', False, input_shape, valid_transform), batch_size=batch_size, num_workers=worker)
 
     pl.seed_everything(1)
-    checkpoint_callback = ModelCheckpoint(dirpath=save_dir, filename=model_name, monitor="val_top1", mode='min', verbose=True, save_top_k=1)
+    checkpoint_callback = ModelCheckpoint(dirpath=save_dir, filename=model_name, monitor="PSNR_loss", mode='min', verbose=True, save_top_k=1)
     trainer = pl.Trainer(precision=16, max_epochs=max_epochs, gpus=1, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)
     trainer.fit(model, trainLoader, validLoader)
 

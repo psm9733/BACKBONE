@@ -20,8 +20,9 @@ def cut_img(image_path, target_dir, stride):
             empty_img = np.zeros((stride, stride, 3), np.uint8)
             crop = img[height:height+stride, width:width+stride, :]
             empty_img[:crop.shape[0], :crop.shape[1], :] = crop
-            cv2.imwrite(target_dir + "/" + img_name + "/" + str(index) + "_" + img_name + ".png", empty_img)
-            index += 1
+            if np.var(empty_img) > 100:
+                cv2.imwrite(target_dir + "/" + img_name + "/" + str(index) + "_" + img_name + ".png", empty_img)
+                index += 1
 
 
 if __name__ == "__main__":
