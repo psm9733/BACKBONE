@@ -12,6 +12,50 @@ import glob
 import os
 import cv2
 
+class Mnist(Dataset):
+    def __init__(self, root_dir, is_train, one_hot, transform=None, num_classes = 10) -> None:
+        """
+        : root_dir: data path
+        : is_train: set whether load dataset as trainset or valid set
+        : one_hot: if True: y = [0, 0, 0, ..., 1, 0, 0, ..., ] as keras.uitls.to_categorical
+                   else: y = [class_idx] for torch.nn.CrossEntropyLoss
+        : transform: albumentation transforms
+        """
+        super(Mnist, self).__init__()
+        self.transform = transform
+        self.one_hot = one_hot
+        self.is_train = is_train
+        self.num_classes = num_classes
+
+        if self.is_train:
+            self.image_list = glob.glob(root_dir + "/train/**/*.jpg", recursive=True)
+        else:
+            self.image_list = glob.glob(root_dir + "/test/**/*.jpg", recursive=True)
+        self.label_list = dict()
+
+        for img_path in self.image_list:
+            label = img_path.split(os.sep)[-2]
+            self.label_list[img_path] = label
+
+    def __len__(self):
+        return len(self.image_list)
+
+    def __getitem__(self, index):
+        img_file = self.image_list[index]
+        img = cv2.imread(img_file)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # img = img.astype(np.float32) / 255.
+        if self.transform:
+            x = self.transform(image=img)['image']
+        else:
+            x = transforms.ToTensor(img)
+        label = int(self.label_list[img_file])
+        if self.one_hot:
+            y = F.one_hot(torch.tensor(label), self.num_classes)
+        else:
+            y = torch.tensor(label)
+        return {'img': x, 'y_true': y}
+
 class TinyImageNet(Dataset):
     def __init__(self, root_dir, is_train, one_hot, transform=None, num_classes = 200) -> None:
         """
@@ -20,7 +64,6 @@ class TinyImageNet(Dataset):
         : one_hot: if True: y = [0, 0, 0, ..., 1, 0, 0, ..., ] as keras.uitls.to_categorical
                    else: y = [class_idx] for torch.nn.CrossEntropyLoss
         : transform: albumentation transforms
-
         """
         super(TinyImageNet, self).__init__()
         self.transform = transform
@@ -51,6 +94,7 @@ class TinyImageNet(Dataset):
     def __getitem__(self, index):
         img_file = self.data[index]
         img = cv2.imread(img_file)
+        # img = img.astype(np.float32) / 255.
         if self.transform:
             x = self.transform(image=img)['image']
         else:
@@ -67,9 +111,9 @@ class TinyImageNet(Dataset):
             y = torch.tensor(label)
         return {'img': x, 'y_true': y}
 
-class NoiseReduction(Dataset):
+class Denoising(Dataset):
     def __init__(self, root_dir, is_train, input_shape, transform=None, num_classes=200) -> None:
-        super(NoiseReduction, self).__init__()
+        super(Denoising, self).__init__()
         self.transform = transform
         self.is_train = is_train
         self.input_shape = input_shape
@@ -110,8 +154,10 @@ class NoiseReduction(Dataset):
         gt_imgpath = self.train_list[input_imgpath]
         input_img = cv2.imread(input_imgpath)
         input_img = cv2.resize(input_img, (self.input_shape[1], self.input_shape[2]))
+        # input_img = input_img.astype(np.float32)
         gt_img = cv2.imread(gt_imgpath)
         gt_img = cv2.resize(gt_img, (self.input_shape[1], self.input_shape[2]))
+        # gt_img = gt_img.astype(np.float32)
         if self.transform:
             transformed = self.transform(image=input_img, image1=input_img, image2=gt_img)
             x = transformed['image1']
@@ -142,8 +188,9 @@ if __name__ == '__main__':
         albumentations.pytorch.ToTensorV2(),
     ], additional_targets={'image1': 'image', 'image2': 'image'})
 
+    loader = DataLoader(Mnist('S:/sangmin/backbone/dataset/mnist', True, True, transform), batch_size=128, shuffle=True, num_workers=1)
     # loader = DataLoader(TinyImageNet('C:/Users/sangmin/Desktop/backbone/dataset/tiny-imagenet-200', True, True, transform), batch_size=128, shuffle=True, num_workers=4)
-    loader = DataLoader(NoiseReduction('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', True, input_shape, transform), batch_size=1, num_workers=1)
+    # loader = DataLoader(Denoising('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', True, input_shape, transform), batch_size=1, num_workers=1)
     for i in range(2):
         print('epoch', i)
         for batch, sample in tqdm.tqdm(enumerate(loader), total=loader.__len__()):

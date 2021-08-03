@@ -19,4 +19,4 @@ class SAM(nn.Module):
         output3 = self.conv2d_BN3(loss_output)
         output = torch.mul(output2, output3)
         output = output + input
-        return output, loss_output
+        return output1, loss_output

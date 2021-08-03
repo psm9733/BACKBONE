@@ -91,7 +91,7 @@ class HourglassBlock(nn.Module):          #StackedHourGlass
 
         self.intermediateBlock1 = ResidualBlock(in_channels=feature_num, activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), int(feature_num)), kernel_size=(3, 3), stride=(1, 1, 1), padding=padding, groups = groups, bias=bias)
         self.intermediateBlock2 = ResidualBlock(in_channels=feature_num, activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), int(feature_num)), kernel_size=(3, 3), stride=(1, 1, 1), padding=padding, groups = groups, bias=bias)
-        self.intermediateBlock2 = ResidualBlock(in_channels=feature_num, activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), int(feature_num)), kernel_size=(3, 3), stride=(1, 1, 1), padding=padding, groups = groups, bias=bias)
+        self.intermediateBlock3 = ResidualBlock(in_channels=feature_num, activation=activation, out_channels=(int(feature_num / 2), int(feature_num / 2), int(feature_num)), kernel_size=(3, 3), stride=(1, 1, 1), padding=padding, groups = groups, bias=bias)
 
     def forward(self, input):
         down_out1 = self.downblock1(input)
@@ -103,7 +103,7 @@ class HourglassBlock(nn.Module):          #StackedHourGlass
 
         intermediate_out1 = self.intermediateBlock1(down_out1)
         intermediate_out2 = self.intermediateBlock2(down_out2)
-        intermediate_out3 = self.intermediateBlock2(down_out3)
+        intermediate_out3 = self.intermediateBlock3(down_out3)
 
         up_out1 = self.upblock1(intermediate_out3, same_out2)
         up_out2 = self.upblock2(intermediate_out2, up_out1)
