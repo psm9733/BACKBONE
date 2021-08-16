@@ -1,4 +1,7 @@
 import torch.nn as nn
+import glob
+import natsort
+import numpy as np
 
 def weight_initialize(model):
     for m in model.modules():
@@ -21,3 +24,15 @@ def getPadding(kernal_size, mode = 'same'):
         return (int((kernal_size[0] - 1) / 2), (int((kernal_size[1] - 1) / 2)))
     else:
         return 0
+
+def splitDataset(root_dir, train_ratio):
+    dataset = glob.glob(root_dir + "/**/*.jpg", recursive=True)
+    dataset = natsort.natsorted(dataset)
+    train_num = int(len(dataset) * train_ratio)
+    train_list = dataset[0:train_num]
+    valid_list = dataset[train_num:]
+    return [train_list, valid_list]
+
+def unityeye_json_process(img, json_list):
+    ldmks = [eval(s) for s in json_list]
+    return np.array([(x, img.shape[0]-y, z) for (x,y,z) in ldmks])

@@ -5,7 +5,7 @@ import albumentations.pytorch
 import warnings
 from datetime import datetime
 from utils.generator import Mnist, TinyImageNet
-from network.model import Classification
+from network.model import E3GazeNet
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -14,14 +14,15 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 def main():
-    model_name="DenseNext20"
+    model_name="E3GazeNet"
     batch_size = 128
-    weight_decay = 1e-4
+    weight_decay = 5e-5
     max_epochs = 1000
     workers = 4
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
     save_dir = "./saved_model/" + timestamp
+    input_shape = (1, 96, 128)
     if os.path.isdir('./logs') == False:
         os.mkdir('./logs')
     if os.path.isdir('./saved_model') == False:
@@ -37,17 +38,14 @@ def main():
 
     # data setup
     train_transform = albumentations.Compose([
-        albumentations.SomeOf([
-            albumentations.HorizontalFlip(p=0.5),
-            albumentations.VerticalFlip(p=0.5),
-            albumentations.Rotate(-90, 90),
-            albumentations.Sharpen(),
-        ], 2, p=0.5),
-        albumentations.Affine(),
-        albumentations.ColorJitter(),
-        # albumentations.Normalize(0, 1),
+        albumentations.Resize(height=input_shape[1], width=input_shape[2]),
+        albumentations.OneOf([
+            albumentations.Sharpen(p=1),
+            albumentations.MotionBlur(p=1),
+        ], p=0.5),
         albumentations.pytorch.ToTensorV2(),
-    ])
+    ], keypoint_params=albumentations.KeypointParams(format='xy'))
+
     valid_transform = albumentations.Compose([
         # albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
@@ -58,8 +56,7 @@ def main():
                                    filename="{epoch}_{val_loss:.4f}",
                                    save_top_k = 1)
     trainer = pl.Trainer(auto_lr_find=False, precision=32, max_epochs=max_epochs, gpus=1, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)
-    model = Classification(task="tiny_imagenet", batch_size=batch_size, train_aug=train_transform, val_aug=valid_transform, workers=workers, weight_decay=weight_decay)
-    # trainer.tune(model)
+    model = E3GazeNet(input_shape=input_shape, batch_size=batch_size, train_aug=train_transform, val_aug=valid_transform, workers=workers, weight_decay=weight_decay)
     trainer.fit(model)
 
 if __name__ == "__main__":

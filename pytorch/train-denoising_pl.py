@@ -61,7 +61,7 @@ def main():
     model = DeNoising(feature_num=feature_num, input_shape=input_shape, batch_size=batch_size, train_aug=train_transform, val_aug=valid_transform, workers=workers, weight_decay=weight_decay)
     # model.to(device)
     checkpoint_callback = ModelCheckpoint(dirpath=save_dir, filename=model_name, monitor="PSNR_loss", mode='min', verbose=True, save_top_k=1)
-    trainer = pl.Trainer(auto_lr_find=True, precision=16, max_epochs=max_epochs, gpus=1, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)
+    trainer = pl.Trainer(auto_lr_find=False, precision=16, max_epochs=max_epochs, gpus=1, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)
     # trainer.tune(model)
     trainer.fit(model)
 

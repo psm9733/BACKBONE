@@ -3,14 +3,14 @@ from network.densenet.blocks import *
 import torch.nn as nn
 
 class DenseNet32(nn.Module):
-    def __init__(self, activation, bias=True):
+    def __init__(self, activation, in_channels, bias=True):
         super(DenseNet32, self).__init__()
         self.block1_end = DenseBlock(in_channels=128, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias)
         self.block2_end = DenseBlock(in_channels=224, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias)
         self.block3_end = DenseBlock(in_channels=352, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias)
         self.output = DenseBlock(in_channels=512, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias)
         self.densenet32 = nn.Sequential(
-            Conv2D_BN(3, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding='same', bias=bias),
+            Conv2D_BN(in_channels, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding='same', bias=bias),
             nn.MaxPool2d((2, 2), stride=2),
 
             DenseBlock(in_channels=64, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias),
@@ -45,14 +45,14 @@ class DenseNet32(nn.Module):
         return self.output_channel
 
 class DenseNet64(nn.Module):
-    def __init__(self, activation, bias=True):
+    def __init__(self, activation, in_channels, bias=True):
         super(DenseNet64, self).__init__()
         self.block1_end = DenseBlock(in_channels=192, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias)
         self.block2_end = DenseBlock(in_channels=384, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias)
         self.block3_end = DenseBlock(in_channels=672, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias)
         self.output = DenseBlock(in_channels=1024, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias)
         self.densenet64 = nn.Sequential(
-            Conv2D_BN(3, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding=(3, 3)),
+            Conv2D_BN(in_channels, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding=(3, 3)),
             nn.MaxPool2d((2, 2), stride=2),
 
             DenseBlock(in_channels=64, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1), padding='same', bias=bias),
