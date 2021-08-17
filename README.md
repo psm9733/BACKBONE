@@ -1,10 +1,6 @@
 # End to End Eye Gaze Estimation(E3GazeNet)
 >   #   Network Structure
->   >   Gray input(1 Channel) -> HourglassNet + Segmentaion head -> Seg output(2 Channel:Eyelid, Iris)
->   >
->   >   -> 3 Channel(Gray - concat - Seg output) -> DenseNext20 + Regression head 
->   >
->   >   -> Result(Landmark(48 * 2) + Eye Gaze Vector(3))
+>   >   HourglassNet + DenseNext20
 >
 >   # E3GazeNet Inference Output
 >   ### Segmentation Eyelid Output
