@@ -59,6 +59,51 @@ class Mnist(Dataset):
             y = torch.tensor(label)
         return {'img': x, 'y_true': y}
 
+class ColorMnist(Dataset):
+    def __init__(self, root_dir, is_train, one_hot, color_list, transform=None, num_classes = 10) -> None:
+        """
+        : root_dir: data path
+        : is_train: set whether load dataset as trainset or valid set
+        : one_hot: if True: y = [0, 0, 0, ..., 1, 0, 0, ..., ] as keras.uitls.to_categorical
+                   else: y = [class_idx] for torch.nn.CrossEntropyLoss
+        : transform: albumentation transforms
+        """
+        super(ColorMnist, self).__init__()
+        self.color_list = color_list
+        self.transform = transform
+        self.one_hot = one_hot
+        self.is_train = is_train
+        self.num_classes = num_classes
+
+        if self.is_train:
+            self.image_list = glob.glob(root_dir + "/train/**/*.jpg", recursive=True)
+        else:
+            self.image_list = glob.glob(root_dir + "/test/**/*.jpg", recursive=True)
+        self.label_list = dict()
+
+        for img_path in self.image_list:
+            label = img_path.split(os.sep)[-2]
+            self.label_list[img_path] = self.color_list.index(label)
+
+    def __len__(self):
+        return len(self.image_list)
+
+    def __getitem__(self, index):
+        img_file = self.image_list[index]
+        img = cv2.imread(img_file)
+        img = cv2.resize(img, (224, 224))
+        img = img.astype(np.float32) / 255.
+        if self.transform:
+            x = self.transform(image=img)['image']
+        else:
+            x = transforms.ToTensor(img)
+        label = int(self.label_list[img_file])
+        if self.one_hot:
+            y = F.one_hot(torch.tensor(label), self.num_classes)
+        else:
+            y = torch.tensor(label)
+        return {'img': x, 'y_true': y}
+
 class TinyImageNet(Dataset):
     def __init__(self, root_dir, is_train, one_hot, transform=None, num_classes = 200) -> None:
         """
