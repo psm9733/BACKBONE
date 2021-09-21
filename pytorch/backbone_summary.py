@@ -5,7 +5,7 @@ from network.resnext.resnext import *
 from network.hourglassnet.hourglassnet import *
 from torchsummary import summary
 from torch.autograd import Variable
-from network.model import DeNoising, Classification, GazeEstimation
+from network.model import DeNoising, Classification, E3GazeNet
 import torch.onnx
 import torch._C as _C
 TrainingMode = _C._onnx.TrainingMode
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     activation = nn.ReLU()
     input_shape = (1, 128, 96)
     batch_size = 1
-    model = GazeEstimation(input_shape)
+    model = Classification("mnist")
     model.eval()
     summary(model, input_shape, batch_size=batch_size, device='cpu')
     dummy_input = torch.tensor(torch.randn(batch_size, input_shape[0], input_shape[1], input_shape[2]))

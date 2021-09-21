@@ -20,8 +20,8 @@ def main():
     max_epochs = 1000
     workers = 4
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
-    logdir = "C:/Users/sangmin/Desktop/backbone/logs/" + timestamp
-    save_dir = "C:/Users/sangmin/Desktop/backbone/pytorch/saved_model/" + timestamp
+    logdir = "/Users/sangmin/BACKBONE/pytorch/logs/" + timestamp
+    save_dir = "/Users/sangmin/BACKBONE/pytorch/saved_model/" + timestamp
     if os.path.isdir('./logs') == False:
         os.mkdir('./logs')
     if os.path.isdir('./saved_model') == False:
@@ -57,7 +57,7 @@ def main():
                                    dirpath=save_dir,
                                    filename="{epoch}_{val_loss:.4f}",
                                    save_top_k = 1)
-    trainer = pl.Trainer(auto_lr_find=False, precision=32, max_epochs=max_epochs, gpus=1, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)
+    trainer = pl.Trainer(auto_lr_find=False, precision=32, max_epochs=max_epochs, gpus=0, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)
     model = Classification(task="color_mnist", batch_size=batch_size, train_aug=train_transform, val_aug=valid_transform, workers=workers, weight_decay=weight_decay)
     # trainer.tune(model)
     trainer.fit(model)

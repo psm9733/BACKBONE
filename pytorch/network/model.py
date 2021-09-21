@@ -1,10 +1,9 @@
-import numpy as np
-import torch.nn
-
+from network.resnext.resnext import ResNext14
 from network.densenext.densenext import *
 from network.hourglassnet.hourglassnet import *
 from network.unet.unet import *
 from network.resnet.resnet import *
+from network.regnet.regnet import *
 from utils.utils import weight_initialize
 from torchsummary import summary
 from adamp import *
@@ -14,6 +13,8 @@ from torchvision.utils import make_grid
 from torch.utils.data import DataLoader
 from utils.generator import *
 import pytorch_lightning as pl
+import numpy as np
+import torch.nn
 
 class Classification(pl.LightningModule):
     def __init__(self, task, batch_size = 1, train_aug = None, val_aug = None, workers = 4, weight_decay = 1e-4):
@@ -21,7 +22,7 @@ class Classification(pl.LightningModule):
         # hyper parameter
         self.task = task
         self.classes = -1
-        self.in_channels = 3
+        self.in_channels = 1
         self.lr = 1e-4
         self.train_aug = train_aug
         self.val_aug = val_aug
@@ -40,7 +41,7 @@ class Classification(pl.LightningModule):
 
         # model setting
         self.activation = nn.ReLU()
-        self.backbone = DenseNext32(self.activation, self.in_channels, groups = 8)
+        self.backbone = RegNet(self.activation, self.in_channels, block_width = 128, bottleneck_ratio = 2, groups = 8, padding='same')
         self.classification_head = nn.Sequential(
             Conv2D_BN(self.backbone.getOutputChannel(), self.activation, 1280, (1, 1)),
             nn.AdaptiveAvgPool2d(1),

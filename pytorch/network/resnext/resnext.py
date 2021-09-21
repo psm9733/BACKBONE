@@ -9,7 +9,7 @@ class ResNext14(nn.Module):
         self.block2_end = ResidualBlock(in_channels=256, activation=activation, out_channels=(128, 128, 512), kernel_size=(3, 3), stride=(1, 2, 1), padding='same', groups=groups)
         self.block3_end = ResidualBlock(in_channels=512, activation=activation, out_channels=(256, 256, 1024), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups=groups)
         self.output = ResidualBlock(in_channels=1024, activation=activation, out_channels=(512, 512, 2048), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups=groups)
-
+        self.output_channel = 2048
         self.resnext14 = nn.Sequential(
             Conv2D_BN(in_channels, activation=activation, out_channels=64, kernel_size=(7, 7), stride=2, padding=(3, 3)),
             nn.MaxPool2d((2, 2), stride=2),
@@ -22,6 +22,9 @@ class ResNext14(nn.Module):
     def forward(self, input):
         output = self.resnext14(input)
         return output
+
+    def getOutputChannel(self):
+        return self.output_channel
 
 class ResNext26(nn.Module):
     def __init__(self, activation, in_channels, groups=32, bias=True):

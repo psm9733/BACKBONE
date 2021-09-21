@@ -1,7 +1,6 @@
 import math
 import torch.nn as nn
 from utils.utils import getPadding
-import torch.nn as nn
 
 class Conv2D_BN(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride = 1, padding = 'same', groups = 1, dilation=1, bias = True):
