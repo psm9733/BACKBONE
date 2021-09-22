@@ -22,7 +22,7 @@ class Classification(pl.LightningModule):
         # hyper parameter
         self.task = task
         self.classes = -1
-        self.in_channels = 1
+        self.in_channels = 3
         self.lr = 1e-4
         self.train_aug = train_aug
         self.val_aug = val_aug
@@ -41,7 +41,7 @@ class Classification(pl.LightningModule):
 
         # model setting
         self.activation = nn.ReLU()
-        self.backbone = RegNet(self.activation, self.in_channels, block_width = 128, bottleneck_ratio = 2, groups = 8, padding='same')
+        self.backbone = RegNet(self.activation, self.in_channels, block_width=256, bottleneck_ratio=2, groups=8, padding='same')
         self.classification_head = nn.Sequential(
             Conv2D_BN(self.backbone.getOutputChannel(), self.activation, 1280, (1, 1)),
             nn.AdaptiveAvgPool2d(1),
@@ -58,8 +58,8 @@ class Classification(pl.LightningModule):
             self.train_gen = Mnist('S:/sangmin/backbone/dataset/mnist', True, False, self.train_aug, self.classes)
             self.val_gen = Mnist('S:/sangmin/backbone/dataset/mnist', False, False, self.val_aug, self.classes)
         elif self.task == "tiny_imagenet":
-            self.train_gen = TinyImageNet('/home/fssv1/sangmin/backbone/dataset/tiny-imagenet-200', True, False, self.train_aug, self.classes)
-            self.val_gen = TinyImageNet('/home/fssv1/sangmin/backbone/dataset/tiny-imagenet-200', False, False, self.val_aug, self.classes)
+            self.train_gen = TinyImageNet('C:/Users/sangmin/Desktop/backbone/dataset/tiny-imagenet-200', True, False, self.train_aug, self.classes)
+            self.val_gen = TinyImageNet('C:/Users/sangmin/Desktop/backbone/dataset/tiny-imagenet-200', False, False, self.val_aug, self.classes)
 
     def forward(self, input):
         output = self.model(input)
@@ -70,7 +70,7 @@ class Classification(pl.LightningModule):
     def configure_optimizers(self):
         self.optimizer = AdamP(self.parameters(), self.lr, weight_decay=self.weight_decay)
         self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.lr, max_lr=self.lr * 10,
-                                                      step_size_up=50, cycle_momentum=False,
+                                                      step_size_up=10, cycle_momentum=False,
                                                       mode='triangular2', gamma=0.995, verbose=True)
         return [self.optimizer], [self.scheduler]
 

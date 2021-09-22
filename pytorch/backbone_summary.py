@@ -12,7 +12,7 @@ TrainingMode = _C._onnx.TrainingMode
 
 if __name__ == "__main__":
     activation = nn.ReLU()
-    input_shape = (1, 128, 96)
+    input_shape = (1, 256, 256)
     batch_size = 1
     model = Classification("mnist")
     model.eval()
