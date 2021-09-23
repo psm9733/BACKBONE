@@ -13,14 +13,14 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def main():
-    model_name="RegNet"
+    model_name="ResNet12"
     batch_size = 256
     weight_decay = 1e-4
-    max_epochs = 20
+    max_epochs = 50
     workers = 4
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
-    logdir = "C:/Users/sangmin/Desktop/backbone/pytorch/logs/" + timestamp
-    save_dir = "C:/Users/sangmin/Desktop/backbone/pytorch/saved_model/" + timestamp
+    logdir = "./logs/" + timestamp
+    save_dir = "./saved_model/" + timestamp
     if os.path.isdir('./logs') == False:
         os.mkdir('./logs')
     if os.path.isdir('./saved_model') == False:
@@ -29,7 +29,8 @@ def main():
         os.mkdir(save_dir)
     if os.path.isdir(logdir) == False:
         os.mkdir(logdir)
-    tb_logger = pl_loggers.TensorBoardLogger(logdir, name = model_name, default_hp_metric=False)
+
+    tb_logger = pl_loggers.TensorBoardLogger(logdir, name=model_name, default_hp_metric=False)
     engine = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if engine == torch.device('cpu'):
         warnings.warn('Cannot use CUDA context. Train might be slower!')

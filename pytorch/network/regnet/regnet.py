@@ -7,23 +7,18 @@ import torch.nn as nn
 class RegNet(nn.Module):
     def __init__(self, activation, in_channels, block_width, bottleneck_ratio, groups, padding='same', dilation=1, bias=True):
         super(RegNet, self).__init__()
-        self.stem = StemBlock(in_channels, activation, bias)
-        self.stage1 = RegNetStage(activation, 3, self.stem.getOutputChannel(), block_width, bottleneck_ratio, groups, padding, dilation)
+        self.stage1 = RegNetStage(activation, 3, in_channels, block_width, bottleneck_ratio, groups, padding, dilation)
         self.stage2 = RegNetStage(activation, 3, block_width, block_width, bottleneck_ratio, groups, padding, dilation)
         self.stage3 = RegNetStage(activation, 3, block_width, block_width, bottleneck_ratio, groups, padding, dilation)
         self.stage4 = RegNetStage(activation, 3, block_width, block_width, bottleneck_ratio, groups, padding, dilation)
-        self.body = nn.Sequential(
-            self.stage1,
-            self.stage2,
-            self.stage3,
-            self.stage4,
-        )
         self.output_channel = block_width
 
     def forward(self, input):
-        output = self.stem(input)
-        output = self.body(output)
-        return output
+        stage1_out = self.stage1(input)
+        stage2_out = self.stage2(stage1_out)
+        stage3_out = self.stage3(stage2_out)
+        stage4_out = self.stage4(stage3_out)
+        return [stage1_out, stage2_out, stage3_out, stage4_out]
 
     def getOutputChannel(self):
         return self.output_channel

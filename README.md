@@ -1,6 +1,6 @@
 # End to End Eye Gaze Estimation(E3GazeNet)
 >   #   Network Structure
->   >   HourglassNet + DenseNext20
+>   >   HourglassNet + DenseNext
 >
 >   # E3GazeNet Inference Output
 >   ### Segmentation Eyelid Output
@@ -38,35 +38,29 @@
 
 # Completed Backbone Models
 > ### ResNet
->   > ##### ResNet26(Pytorch)
->   > ##### ResNet50(Pytorch)
 
 > ### ResNext
->   > ##### ResNext14(Pytorch)
->   > ##### ResNext26(Pytorch)
->   > ##### ResNext50(Pytorch)
+
+> ### RegNet
 
 > ### DenseNet
->   > ##### DenseNet32(Pytorch)
->   > ##### DenseNet64(Pytorch)
 
 > ### DenseNext
->   > ##### DenseNext32(Pytorch)
->   > ##### DenseNext64(Pytorch)
 
 > ### SHNet(Stacked Hourglass Network)
->   >   ##### SHNet(Pytorch)
 
 # Completed Blocks
-> ### StemBlock(Pytorch)
+> ### StemBlock
 
-> ### ResidualBlock(Pytorch)
+> ### ResidualBlock
+ 
+> ### XBlock
 
-> ### DenseBlock(Pytorch)
+> ### DenseBlock
 
 > ### HourglassBlock
->   > ##### HourglassUpBlock(Pytorch)
->   > ##### HourglassDownBlock(Pytorch)
+>   > ##### HourglassUpBlock
+>   > ##### HourglassDownBlock
 
 ## Reference
 *   https://github.com/swook/GazeML/tree/master/datasets/UnityEyes

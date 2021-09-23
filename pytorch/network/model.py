@@ -1,5 +1,7 @@
-from network.resnext.resnext import ResNext14
+from network.resnext.resnext import *
+from network.resnet.resnet import *
 from network.densenext.densenext import *
+from network.densenet.densenet import *
 from network.hourglassnet.hourglassnet import *
 from network.unet.unet import *
 from network.resnet.resnet import *
@@ -41,17 +43,17 @@ class Classification(pl.LightningModule):
 
         # model setting
         self.activation = nn.ReLU()
-        self.backbone = RegNet(self.activation, self.in_channels, block_width=256, bottleneck_ratio=2, groups=8, padding='same')
+        self.stem = StemBlock(self.in_channels, self.activation)
+        # self.backbone = RegNet(self.activation, self.stem.getOutputChannel(), block_width=256, bottleneck_ratio=2, groups=8, padding='same')
+        self.backbone = ResNet12(self.activation, self.stem.getOutputChannel())
         self.classification_head = nn.Sequential(
             Conv2D_BN(self.backbone.getOutputChannel(), self.activation, 1280, (1, 1)),
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(1280, self.classes, 1)
         )
-        self.model = nn.Sequential(
-            self.backbone,
-            self.classification_head
-        )
-        weight_initialize(self.model)
+        weight_initialize(self.stem)
+        weight_initialize(self.backbone)
+        weight_initialize(self.classification_head)
 
     def setup(self, stage):
         if self.task == "mnist":
@@ -62,9 +64,11 @@ class Classification(pl.LightningModule):
             self.val_gen = TinyImageNet('C:/Users/sangmin/Desktop/backbone/dataset/tiny-imagenet-200', False, False, self.val_aug, self.classes)
 
     def forward(self, input):
-        output = self.model(input)
-        b, c, _, _ = output.size()
-        output = output.view(b, c)
+        stem_out = self.stem(input)
+        backbone_out = self.backbone(stem_out)[3]
+        head_out = self.classification_head(backbone_out)
+        b, c, _, _ = head_out.size()
+        output = head_out.view(b, c)
         return {"pred": output}
 
     def configure_optimizers(self):
