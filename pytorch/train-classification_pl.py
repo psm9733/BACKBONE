@@ -14,7 +14,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def main():
     model_name="ResNet12"
-    batch_size = 256
+    batch_size = 1024
     weight_decay = 1e-4
     max_epochs = 50
     workers = 4

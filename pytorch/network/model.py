@@ -44,7 +44,7 @@ class Classification(pl.LightningModule):
         # model setting
         self.activation = nn.ReLU()
         self.stem = StemBlock(self.in_channels, self.activation)
-        # self.backbone = RegNet(self.activation, self.stem.getOutputChannel(), block_width=256, bottleneck_ratio=2, groups=8, padding='same')
+        # self.backbone = RegNetX_200MF(self.activation, in_channels=self.stem.getOutputChannel(), block_width=[24, 56, 152, 368], bottleneck_ratio=1, groups=8, padding='same')
         self.backbone = ResNet12(self.activation, self.stem.getOutputChannel())
         self.classification_head = nn.Sequential(
             Conv2D_BN(self.backbone.getOutputChannel(), self.activation, 1280, (1, 1)),
@@ -60,8 +60,8 @@ class Classification(pl.LightningModule):
             self.train_gen = Mnist('S:/sangmin/backbone/dataset/mnist', True, False, self.train_aug, self.classes)
             self.val_gen = Mnist('S:/sangmin/backbone/dataset/mnist', False, False, self.val_aug, self.classes)
         elif self.task == "tiny_imagenet":
-            self.train_gen = TinyImageNet('C:/Users/sangmin/Desktop/backbone/dataset/tiny-imagenet-200', True, False, self.train_aug, self.classes)
-            self.val_gen = TinyImageNet('C:/Users/sangmin/Desktop/backbone/dataset/tiny-imagenet-200', False, False, self.val_aug, self.classes)
+            self.train_gen = TinyImageNet('/home/fssv1/sangmin/backbone/dataset/tiny-imagenet-200', True, False, self.train_aug, self.classes)
+            self.val_gen = TinyImageNet('/home/fssv1/sangmin/backbone/dataset/tiny-imagenet-200', False, False, self.val_aug, self.classes)
 
     def forward(self, input):
         stem_out = self.stem(input)

@@ -13,7 +13,7 @@ TrainingMode = _C._onnx.TrainingMode
 if __name__ == "__main__":
     activation = nn.ReLU()
     input_shape = (3, 64, 64)
-    batch_size = 16
+    batch_size = 4
     model = Classification("tiny_imagenet")
     model.eval()
     summary(model, input_shape, batch_size=batch_size, device='cpu')
