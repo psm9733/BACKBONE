@@ -19,13 +19,13 @@ import numpy as np
 import torch.nn
 
 class Classification(pl.LightningModule):
-    def __init__(self, task, batch_size = 1, train_aug = None, val_aug = None, workers = 4, weight_decay = 1e-4):
+    def __init__(self, task, batch_size = 1, train_aug = None, val_aug = None, workers = 4, learning_rate = 1e-3, weight_decay = 1e-4):
         super(Classification, self).__init__()
         # hyper parameter
         self.task = task
         self.classes = -1
         self.in_channels = 3
-        self.lr = 1e-4
+        self.lr = learning_rate
         self.train_aug = train_aug
         self.val_aug = val_aug
         self.batch_size = batch_size
@@ -43,9 +43,12 @@ class Classification(pl.LightningModule):
 
         # model setting
         self.activation = nn.ReLU()
-        self.stem = StemBlock(self.in_channels, self.activation)
-        # self.backbone = RegNetX_200MF(self.activation, in_channels=self.stem.getOutputChannel(), block_width=[24, 56, 152, 368], bottleneck_ratio=1, groups=8, padding='same')
-        self.backbone = ResNet12(self.activation, self.stem.getOutputChannel())
+        self.stem = StemBlock(self.in_channels, self.activation, bias=True)
+        # self.backbone = RegNetY_200MF_custom(self.activation, in_channels=self.stem.getOutputChannel(), padding='same', bias=True)
+        # self.backbone = RegNetY_400MF(self.activation, in_channels=self.stem.getOutputChannel(), padding='same', bias=True)
+        # self.backbone = ResNet12(self.activation, self.stem.getOutputChannel())
+        # self.backbone = ResNext12(self.activation, self.stem.getOutputChannel())
+        self.backbone = RegNetX_200MF_custom(self.activation, self.stem.getOutputChannel())
         self.classification_head = nn.Sequential(
             Conv2D_BN(self.backbone.getOutputChannel(), self.activation, 1280, (1, 1)),
             nn.AdaptiveAvgPool2d(1),
@@ -117,10 +120,10 @@ class Classification(pl.LightningModule):
         self.valid_acc_top5.clear()
 
 class DeNoising(pl.LightningModule):
-    def __init__(self, feature_num, input_shape, batch_size = 1, train_aug = None, val_aug = None, workers = 4, weight_decay = 1e-4):
+    def __init__(self, feature_num, input_shape, batch_size = 1, train_aug = None, val_aug = None, workers = 4, learning_rate = 1e-7, weight_decay = 1e-4):
         super(DeNoising, self).__init__()
         self.activation = nn.PReLU()
-        self.lr = 1e-7
+        self.lr = learning_rate
         self.input_shape = input_shape
         self.train_aug = train_aug
         self.val_aug = val_aug
@@ -194,10 +197,10 @@ class DeNoising(pl.LightningModule):
         self.log("lr", self.scheduler.get_lr()[0])
 
 class E3GazeNet(pl.LightningModule):
-    def __init__(self, input_shape, batch_size = 1, train_aug = None, val_aug = None, workers = 4, weight_decay = 1e-4):
+    def __init__(self, input_shape, batch_size = 1, train_aug = None, val_aug = None, workers = 4, learning_rate = 1e-4, weight_decay = 1e-4):
         super(E3GazeNet, self).__init__()
         self.activation = nn.ReLU()
-        self.lr = 1e-4
+        self.lr = learning_rate
         self.input_shape = input_shape
         self.iris_points = 32
         self.eyelid_points = 16

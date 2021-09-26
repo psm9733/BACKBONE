@@ -14,10 +14,10 @@ class ResidualBlock(nn.Module):
         output = self.conv2d_bn_1(input)
         output = self.conv2d_bn_2(output)
         output = self.conv2d_bn_3(output)
-        if output.shape != input.shape:
-            identity = self.identity(input)
-        else:
+        if output.shape[2:4] == input.shape[2:4]:
             identity = input
+        else:
+            identity = self.identity(input)
         output += identity
         return output
 
@@ -33,10 +33,10 @@ class HourglassDownBlock(nn.Module):
         output = self.conv2d_bn_1(input)
         output = self.conv2d_bn_2(output)
         output = self.conv2d_bn_3(output)
-        if output.shape != input.shape:
-            identity = self.identity(input)
-        else:
+        if output.shape[2:4] == input.shape[2:4]:
             identity = input
+        else:
+            identity = self.identity(input)
         output += identity
         return output
 

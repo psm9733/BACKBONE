@@ -12,15 +12,17 @@ import os
 import torch.nn.functional as F
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def main():
-    model_name="SHNet"
+    backbone_name="SHNet"
     input_shape = (3, 256, 256)
     feature_num = 512
     batch_size = 8
     workers = 4
+    learning_rate = 1e-7
     weight_decay = 1e-5
+    model_name = backbone_name + "/lr=" + str(learning_rate) + "/wd=" + str(weight_decay) + "/batchsize=" + str(batch_size)
     max_epochs = 72
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
@@ -58,7 +60,7 @@ def main():
         albumentations.Normalize(0, 1),
         albumentations.pytorch.ToTensorV2(),
     ], additional_targets={'image1': 'image', 'image2': 'image'})
-    model = DeNoising(feature_num=feature_num, input_shape=input_shape, batch_size=batch_size, train_aug=train_transform, val_aug=valid_transform, workers=workers, weight_decay=weight_decay)
+    model = DeNoising(feature_num=feature_num, input_shape=input_shape, batch_size=batch_size, train_aug=train_transform, val_aug=valid_transform, workers=workers, learning_rate=learning_rate, weight_decay=weight_decay)
     # model.to(device)
     checkpoint_callback = ModelCheckpoint(dirpath=save_dir, filename=model_name, monitor="PSNR_loss", mode='min', verbose=True, save_top_k=1)
     trainer = pl.Trainer(auto_lr_find=False, precision=16, max_epochs=max_epochs, gpus=1, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)

@@ -24,9 +24,9 @@ class DenseNextBlock(nn.Module):
             outputs.append(b(output))
         output = torch.cat(outputs, dim = 1)
 
-        if output.shape != input.shape:
-            identity = self.identity(input)
-        else:
+        if output.shape[1:4] == input.shape[1:4]:
             identity = input
+        else:
+            identity = self.identity(input)
         output = torch.cat([output, identity], dim = 1)
         return output

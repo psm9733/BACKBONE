@@ -13,10 +13,13 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def main():
-    model_name="ResNet12"
-    batch_size = 1024
-    weight_decay = 1e-4
-    max_epochs = 50
+    backbone_name = "ResNet12"
+    # backbone_name = "RegNetY_200MF_CUSTOM"
+    batch_size = 512
+    learning_rate = 1e-3
+    weight_decay = 1e-5
+    model_name = backbone_name + "/lr=" + str(learning_rate) + "/wd=" + str(weight_decay) + "/batchsize=" + str(batch_size)
+    max_epochs = 125
     workers = 4
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
@@ -57,8 +60,8 @@ def main():
                                    dirpath=save_dir,
                                    filename="{epoch}_{val_loss:.4f}",
                                    save_top_k = 1)
-    trainer = pl.Trainer(auto_lr_find=False, precision=32, max_epochs=max_epochs, gpus=0, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)
-    model = Classification(task="tiny_imagenet", batch_size=batch_size, train_aug=train_transform, val_aug=valid_transform, workers=workers, weight_decay=weight_decay)
+    trainer = pl.Trainer(auto_lr_find=False, precision=32, max_epochs=max_epochs, gpus=1, accumulate_grad_batches = 1, logger=tb_logger, callbacks=checkpoint_callback)
+    model = Classification(task="tiny_imagenet", batch_size=batch_size, train_aug=train_transform, val_aug=valid_transform, workers=workers, learning_rate=learning_rate, weight_decay=weight_decay)
     # trainer.tune(model)
     trainer.fit(model)
 
