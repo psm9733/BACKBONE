@@ -41,7 +41,7 @@
 
 > ### ResNext
 
-> ### RegNet
+> ### RegNetX, RegNetY
 
 > ### DenseNet
 
@@ -52,9 +52,13 @@
 # Completed Blocks
 > ### StemBlock
 
+> ### SEBlock
+
 > ### ResidualBlock
  
 > ### XBlock
+
+> ### YBlock
 
 > ### DenseBlock
 
