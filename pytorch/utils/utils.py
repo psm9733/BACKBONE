@@ -1,5 +1,6 @@
 import torch.nn as nn
 import glob
+import tqdm
 import natsort
 import numpy as np
 
@@ -36,3 +37,20 @@ def splitDataset(root_dir, train_ratio):
 def unityeye_json_process(img, json_list):
     ldmks = [eval(s) for s in json_list]
     return np.array([(x, img.shape[0]-y, z) for (x,y,z) in ldmks])
+
+def get_annotations(annotations_path, extensions = ".txt", recursive=True):
+    dataset = []
+    txt_list = glob.glob(annotations_path + "/**/*" + extensions, recursive=recursive)
+    for txt_path in tqdm.tqdm(txt_list):
+        with open(txt_path, 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                cls, cx, cy, w, h = line.split(" ")
+                dataset.append([float(w), float(h)])
+    return np.array(dataset)
+
+def cal_anchors(annotations_path, cluster_num = 9):
+    anchors = []
+    data = get_annotations(annotations_path)
+    kmeans(data, k=cluster_num)
+    return anchors

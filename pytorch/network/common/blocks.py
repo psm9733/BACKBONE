@@ -6,6 +6,7 @@ class StemBlock(nn.Module):
     def __init__(self, in_channels, activation, bias=True):
         super(StemBlock, self).__init__()
         self.output_channel = 128
+        self.output_stride = 4
         self.conv2d_1 = Conv2D_BN(in_channels, activation=activation, out_channels=32, kernel_size=(3, 3), stride=1, padding='same', bias=bias)
         self.conv2d_2 = Conv2D_BN(32, activation, out_channels=64, kernel_size=(3, 3), stride=2, padding='same', bias=bias)
         self.conv2d_3 = Conv2D_BN(64, activation, out_channels=32, kernel_size=(3, 3), stride=1, padding='same', bias=bias)
@@ -23,6 +24,9 @@ class StemBlock(nn.Module):
 
     def getOutputChannel(self):
         return self.output_channel
+
+    def getOutputStride(self):
+        return self.output_stride
 
 class SEBlock(nn.Module):
     def __init__(self, in_channels, bottleneck_ratio, bias=True):

@@ -19,7 +19,7 @@ import numpy as np
 import torch.nn
 
 class Classification(pl.LightningModule):
-    def __init__(self, task, batch_size = 1, train_aug = None, val_aug = None, workers = 4, learning_rate = 1e-3, weight_decay = 1e-4):
+    def __init__(self, task, batch_size=1, train_aug=None, val_aug=None, workers=4, learning_rate=1e-3, weight_decay=1e-4):
         super(Classification, self).__init__()
         # hyper parameter
         self.task = task
@@ -76,7 +76,7 @@ class Classification(pl.LightningModule):
 
     def configure_optimizers(self):
         self.optimizer = AdamP(self.parameters(), self.lr, weight_decay=self.weight_decay)
-        self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.lr, max_lr=self.lr * 10,
+        self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.lr, max_lr=self.lr*10,
                                                       step_size_up=10, cycle_momentum=False,
                                                       mode='triangular2', gamma=0.995, verbose=True)
         return [self.optimizer], [self.scheduler]
@@ -120,7 +120,7 @@ class Classification(pl.LightningModule):
         self.valid_acc_top5.clear()
 
 class DeNoising(pl.LightningModule):
-    def __init__(self, feature_num, input_shape, batch_size = 1, train_aug = None, val_aug = None, workers = 4, learning_rate = 1e-7, weight_decay = 1e-4):
+    def __init__(self, feature_num, input_shape, batch_size=1, train_aug=None, val_aug=None, workers=4, learning_rate=1e-7, weight_decay=1e-4):
         super(DeNoising, self).__init__()
         self.activation = nn.PReLU()
         self.lr = learning_rate
@@ -143,8 +143,8 @@ class DeNoising(pl.LightningModule):
         weight_initialize(self.model)
 
     def setup(self, stage):
-        self.train_gen = DenoisingGenerator('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', True, self.input_shape, self.train_aug)
-        self.val_gen = DenoisingGenerator('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', True, self.input_shape, self.val_aug)
+        self.train_gen = DenoisingGenerator('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', self.input_shape, True, self.train_aug)
+        self.val_gen = DenoisingGenerator('/home/fssv1/sangmin/backbone/dataset/lg_noise_remove', self.input_shape, True, self.val_aug)
 
     def train_dataloader(self):
         return DataLoader(self.train_gen, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=self.workers)
@@ -160,7 +160,7 @@ class DeNoising(pl.LightningModule):
 
     def configure_optimizers(self):
         self.optimizer = AdamP(self.parameters(), self.lr, weight_decay=self.weight_decay)
-        self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.lr, max_lr=self.lr * 1e3,
+        self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.lr, max_lr=self.lr*1e3,
                                                       step_size_up=50, cycle_momentum=False,
                                                       mode='triangular2', gamma=0.995, verbose=True)
         return [self.optimizer], [self.scheduler]
@@ -216,7 +216,7 @@ class E3GazeNet(pl.LightningModule):
         self.stem = Conv2D_BN(self.input_shape[0], activation=self.activation, out_channels=self.feature_num, kernel_size=(3, 3), stride=1, padding='same')
         self.segmentation_backbone = HourglassNet(self.activation, feature_num=self.feature_num, mode = "bilinear")
         self.segmentation_output = Conv2D_BN(self.feature_num, activation=self.activation, out_channels=2, kernel_size=(3, 3), stride=1, padding='same')
-        self.regression_backbone = DenseNext20(self.activation, in_channels=3, groups = 8)
+        self.regression_backbone = DenseNext18(self.activation, in_channels=3, groups = 8)
         self.landmark_head = nn.Sequential(
             nn.Flatten(),
             nn.Linear(3840, self.output_dense_num)
@@ -326,6 +326,89 @@ class E3GazeNet(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         self.log("lr", self.scheduler.get_lr()[0])
+
+class Scaled_Yolov4(pl.LightningModule):
+    def __init__(self, input_shape, classes, batch_size=1, train_aug=None, val_aug=None, workers=4, learning_rate=1e-4, weight_decay=1e-4):
+        super(Scaled_Yolov4, self).__init__()
+        # hyper parameter
+        self.input_shape = input_shape
+        self.classes = classes
+        self.batch_size = batch_size
+        self.in_channels = self.input_shape[1]
+        self.lr = learning_rate
+        self.train_aug = train_aug
+        self.val_aug = val_aug
+        self.workers = workers
+        self.weight_decay = weight_decay
+        self.train_dir = None
+        self.valid_dir = None
+
+        # model setting
+        self.activation = nn.ReLU()
+        self.stem = StemBlock(self.in_channels, self.activation, bias=True)
+        self.backbone = RegNetY_200MF_custom(self.activation, self.stem.getOutputChannel())
+        self.yolo_head = nn.Sequential(
+
+        )
+        self.output_size = [
+            [input_shape[1] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 4, input_shape[2] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 4],
+            [input_shape[1] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 2, input_shape[2] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 2],
+            [input_shape[1] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 1, input_shape[2] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 1],
+        ]
+        print(self.output_shape)
+        weight_initialize(self.stem)
+        weight_initialize(self.backbone)
+        # weight_initialize(self.yolo_head)
+
+    def set_train_path(self, dir_path):
+        self.train_dir = dir_path
+
+    def set_valid_path(self, dir_path):
+        self.valid_dir = dir_path
+
+    def setup(self, stage):
+        self.train_gen = YoloGenerator(self.train_dir, self.input_shape, self.classes, True, self.train_aug)
+        self.val_gen = YoloGenerator(self.valid_dir, self.input_shape, self.classes, False, self.val_aug)
+
+    def forward(self, input):
+        stem_out = self.stem(input)
+        branch1, branch2, branch3 = self.backbone(stem_out)[1:4]
+        # head_out = self.yolo_head(branch1, branch2, branch3)
+        # b, c, _, _ = head_out.size()
+        # output = head_out.view(b, c)
+        return {"pred": branch3}
+
+    def configure_optimizers(self):
+        self.optimizer = AdamP(self.parameters(), self.lr, weight_decay=self.weight_decay)
+        self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.lr, max_lr=self.lr*10,
+                                                      step_size_up=20, cycle_momentum=False,
+                                                      mode='triangular2', gamma=0.995, verbose=True)
+        return [self.optimizer], [self.scheduler]
+
+    def train_dataloader(self):
+        return DataLoader(self.train_gen, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=self.workers)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_gen, batch_size=max(1, int(self.batch_size / 4)), shuffle=False, drop_last=True, num_workers=self.workers)
+
+    def training_step(self, train_batch, batch_idx):
+        x = train_batch['img']
+        y_true = train_batch['y_true']
+        y_pred = self.forward(x)["pred"]
+        loss_fn = torch.nn.CrossEntropyLoss()
+        loss = loss_fn(y_pred, y_true)
+        return loss
+
+    def validation_step(self, val_batch, batch_idx):
+        x = val_batch['img']
+        y_true = val_batch['y_true']
+        y_pred = self.forward(x)["pred"]
+        loss_fn = torch.nn.CrossEntropyLoss()
+        loss = loss_fn(y_pred, y_true)
+        return loss
+
+    def validation_epoch_end(self, outputs):
+        pass
 
 if __name__ == "__main__":
     activation = nn.PReLU()

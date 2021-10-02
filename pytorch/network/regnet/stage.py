@@ -5,7 +5,6 @@ class RegNetXStage(nn.Module):
     def __init__(self, activation, block_num, in_channels, block_width, bottleneck_ratio, groups=1, padding='same', dilation=1, bias=True):
         super(RegNetXStage, self).__init__()
         self.stage = nn.ModuleList([])
-        print(block_width)
         for index in range(0, block_num):
             if index == 0:
                 self.stage.append(XBlock(activation, in_channels, block_width, bottleneck_ratio, 2, padding, groups, dilation, bias))
