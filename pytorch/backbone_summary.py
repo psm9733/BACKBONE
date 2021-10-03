@@ -10,13 +10,36 @@ import torch.onnx
 import torch._C as _C
 TrainingMode = _C._onnx.TrainingMode
 
+def model_save_onnx(model, dummy_input, name, verbose = True):
+    print("=================== Saving {} model ===================".format(name))
+    if verbose:
+        summary(model, input_shape, batch_size=batch_size, device='cpu')
+    torch.onnx.export(model, dummy_input, name + ".onnx", training=TrainingMode.TRAINING, opset_version=11)
+
 if __name__ == "__main__":
     activation = nn.ReLU()
-    input_shape = (3, 416, 416)
     class_num = 91
     batch_size = 4
+    input_shape = (3, 512, 512)
+    dummy_input = torch.tensor(torch.randn(batch_size, input_shape[0], input_shape[1], input_shape[2]))
+    model = Classification("tiny_imagenet")
+    model.eval()
+    model_save_onnx(model, dummy_input, 'Classification')
+
+    input_shape = (3, 512, 512)
+    dummy_input = torch.tensor(torch.randn(batch_size, input_shape[0], input_shape[1], input_shape[2]))
+    model = DeNoising(128, input_shape)
+    model.eval()
+    model_save_onnx(model, dummy_input, 'DeNoising')
+
+    input_shape = (3, 128, 128)
+    dummy_input = torch.tensor(torch.randn(batch_size, input_shape[0], input_shape[1], input_shape[2]))
+    model = E3GazeNet(input_shape)
+    model.eval()
+    model_save_onnx(model, dummy_input, 'E3GazeNet')
+
+    input_shape = (3, 512, 512)
+    dummy_input = torch.tensor(torch.randn(batch_size, input_shape[0], input_shape[1], input_shape[2]))
     model = Scaled_Yolov4(input_shape, class_num)
     model.eval()
-    summary(model, input_shape, batch_size=batch_size, device='cpu')
-    dummy_input = torch.tensor(torch.randn(batch_size, input_shape[0], input_shape[1], input_shape[2]))
-    torch.onnx.export(model, dummy_input, "model.onnx", training=TrainingMode.TRAINING, opset_version=11)
+    model_save_onnx(model, dummy_input, 'Scaled_Yolov4')

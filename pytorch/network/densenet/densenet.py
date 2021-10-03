@@ -5,20 +5,22 @@ import torch.nn as nn
 class DenseNet18(nn.Module):
     def __init__(self, activation, in_channels, groups = 1, bias=True):
         super(DenseNet18, self).__init__()
-        self.output_channel = in_channels + 32 * 8
+        self.output_stride = 16
+        self.output_branch_channels = [in_channels + 32 * 2, in_channels + 32 * 4, in_channels + 32 * 6, in_channels + 32 * 8]
+        self.output_channels = self.output_branch_channels[3]
         self.block1_1 = DenseBlock(in_channels=in_channels, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
         self.block1_end = DenseBlock(in_channels=in_channels + 32, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
 
-        self.block2_t = TransitionLayer(in_channels=in_channels + 32 * 2, activation=activation, out_channels=in_channels + 32 * 2, kernel_size=(1, 1), stride=2, padding='same')
-        self.block2_1 = DenseBlock(in_channels=in_channels + 32 * 2, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
+        self.block2_t = TransitionLayer(in_channels=self.output_branch_channels[0], activation=activation, out_channels=self.output_branch_channels[0], kernel_size=(1, 1), stride=2, padding='same')
+        self.block2_1 = DenseBlock(in_channels=self.output_branch_channels[0], activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
         self.block2_end = DenseBlock(in_channels=in_channels + 32 * 3, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
 
-        self.block3_t = TransitionLayer(in_channels=in_channels + 32 * 4, activation=activation, out_channels=in_channels + 32 * 4, kernel_size=(1, 1), stride=2, padding='same')
-        self.block3_1 = DenseBlock(in_channels=in_channels + 32 * 4, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
+        self.block3_t = TransitionLayer(in_channels=self.output_branch_channels[1], activation=activation, out_channels=self.output_branch_channels[1], kernel_size=(1, 1), stride=2, padding='same')
+        self.block3_1 = DenseBlock(in_channels=self.output_branch_channels[1], activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
         self.block3_end = DenseBlock(in_channels=in_channels + 32 * 5, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
 
-        self.block4_t = TransitionLayer(in_channels=in_channels + 32 * 6, activation=activation, out_channels=in_channels + 32 * 6, kernel_size=(1, 1), stride=2, padding='same')
-        self.block4_1 = DenseBlock(in_channels=in_channels + 32 * 6, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
+        self.block4_t = TransitionLayer(in_channels=self.output_branch_channels[2], activation=activation, out_channels=self.output_branch_channels[2], kernel_size=(1, 1), stride=2, padding='same')
+        self.block4_1 = DenseBlock(in_channels=self.output_branch_channels[2], activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
         self.block4_end = DenseBlock(in_channels=in_channels + 32 * 7, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
 
 
@@ -40,5 +42,11 @@ class DenseNet18(nn.Module):
 
         return [block1_out, block2_out, block3_out, block4_out]
 
-    def getOutputChannel(self):
-        return self.output_channel
+    def getOutputChannels(self):
+        return self.output_channels
+
+    def getOutputBranchChannels(self):
+        return self.output_branch_channels
+
+    def getOutputStride(self):
+        return self.output_stride

@@ -5,7 +5,9 @@ import torch.nn as nn
 class DenseNext18(nn.Module):
     def __init__(self, activation, in_channels, groups = 4, bias=True):
         super(DenseNext18, self).__init__()
-        self.output_channel = in_channels + 32 * 8
+        self.output_stride = 16
+        self.output_branch_channels = [in_channels + 32 * 2, in_channels + 32 * 4, in_channels + 32 * 6, in_channels + 32 * 8]
+        self.output_channels = self.output_branch_channels[3]
         self.block1_1 = DenseNextBlock(in_channels=in_channels, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
         self.block1_end = DenseNextBlock(in_channels=in_channels + 32, activation=activation, out_channels=(128, 32), kernel_size=(3, 3), stride=(1, 1, 1), padding='same', groups = groups, bias=bias)
 
@@ -39,5 +41,11 @@ class DenseNext18(nn.Module):
 
         return [block1_out, block2_out, block3_out, block4_out]
 
-    def getOutputChannel(self):
-        return self.output_channel
+    def getOutputChannels(self):
+        return self.output_channels
+
+    def getOutputBranchChannels(self):
+        return self.output_branch_channels
+
+    def getOutputStride(self):
+        return self.output_stride

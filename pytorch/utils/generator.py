@@ -14,7 +14,7 @@ import cv2
 import json
 import natsort
 from utils.config import *
-from utils import splitDataset, unityeye_json_process
+from utils.utils import unityeye_json_process
 
 class Mnist(Dataset):
     def __init__(self, dataset_dir, is_train, one_hot, transform=None, num_classes = 10) -> None:

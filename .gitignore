@@ -118,3 +118,5 @@ __pycache__
 dataset
 *.pth
 *.onnx
+*.ckpt
+*.yaml

@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
 import torch
 import albumentations
 import albumentations.pytorch
@@ -7,8 +11,6 @@ from network.model import DeNoising
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint
-import os
-
 import torch.nn.functional as F
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"

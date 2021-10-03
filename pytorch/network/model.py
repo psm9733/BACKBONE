@@ -44,13 +44,9 @@ class Classification(pl.LightningModule):
         # model setting
         self.activation = nn.ReLU()
         self.stem = StemBlock(self.in_channels, self.activation, bias=True)
-        # self.backbone = RegNetY_200MF_custom(self.activation, in_channels=self.stem.getOutputChannel(), padding='same', bias=True)
-        # self.backbone = RegNetY_400MF(self.activation, in_channels=self.stem.getOutputChannel(), padding='same', bias=True)
-        # self.backbone = ResNet12(self.activation, self.stem.getOutputChannel())
-        # self.backbone = ResNext12(self.activation, self.stem.getOutputChannel())
-        self.backbone = RegNetX_200MF_custom(self.activation, self.stem.getOutputChannel())
+        self.backbone = RegNetX_200MF_custom(self.activation, self.stem.getOutputChannels())
         self.classification_head = nn.Sequential(
-            Conv2D_BN(self.backbone.getOutputChannel(), self.activation, 1280, (1, 1)),
+            Conv2D_BN(self.backbone.getOutputChannels(), self.activation, 1280, (1, 1)),
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(1280, self.classes, 1)
         )
@@ -216,10 +212,10 @@ class E3GazeNet(pl.LightningModule):
         self.stem = Conv2D_BN(self.input_shape[0], activation=self.activation, out_channels=self.feature_num, kernel_size=(3, 3), stride=1, padding='same')
         self.segmentation_backbone = HourglassNet(self.activation, feature_num=self.feature_num, mode = "bilinear")
         self.segmentation_output = Conv2D_BN(self.feature_num, activation=self.activation, out_channels=2, kernel_size=(3, 3), stride=1, padding='same')
-        self.regression_backbone = DenseNext18(self.activation, in_channels=3, groups = 8)
+        self.regression_backbone = RegNetY_200MF_custom(self.activation, 3)     # gray channels : 1, seg channels : 2
         self.landmark_head = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(3840, self.output_dense_num)
+            nn.Linear(int(self.input_shape[1] / self.regression_backbone.getOutputStride() * self.input_shape[2] / self.regression_backbone.getOutputStride() * self.regression_backbone.getOutputChannels()), self.output_dense_num)
         )
         weight_initialize(self.stem)
         weight_initialize(self.segmentation_backbone)
@@ -242,7 +238,7 @@ class E3GazeNet(pl.LightningModule):
         output = self.segmentation_backbone(output)
         seg_output = self.segmentation_output(output)
         reg_input = torch.cat([seg_output, input], dim=1)
-        output = self.regression_backbone(reg_input)
+        output = self.regression_backbone(reg_input)[3]
         reg_output = self.landmark_head(output)
         return {'seg_pred': seg_output, 'reg_pred': reg_output}
 
@@ -334,7 +330,7 @@ class Scaled_Yolov4(pl.LightningModule):
         self.input_shape = input_shape
         self.classes = classes
         self.batch_size = batch_size
-        self.in_channels = self.input_shape[1]
+        self.in_channels = self.input_shape[0]
         self.lr = learning_rate
         self.train_aug = train_aug
         self.val_aug = val_aug
@@ -346,7 +342,7 @@ class Scaled_Yolov4(pl.LightningModule):
         # model setting
         self.activation = nn.ReLU()
         self.stem = StemBlock(self.in_channels, self.activation, bias=True)
-        self.backbone = RegNetY_200MF_custom(self.activation, self.stem.getOutputChannel())
+        self.backbone = ResNet48(self.activation, self.stem.getOutputChannels())
         self.yolo_head = nn.Sequential(
 
         )
@@ -355,7 +351,7 @@ class Scaled_Yolov4(pl.LightningModule):
             [input_shape[1] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 2, input_shape[2] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 2],
             [input_shape[1] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 1, input_shape[2] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 1],
         ]
-        print(self.output_shape)
+
         weight_initialize(self.stem)
         weight_initialize(self.backbone)
         # weight_initialize(self.yolo_head)

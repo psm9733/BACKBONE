@@ -9,12 +9,12 @@ class SHNet(nn.Module):          #StackedHourGlass
         super(SHNet, self).__init__()
         self.block1_end = HourglassBlock(activation, in_channels, feature_num, mode, padding='same', groups = groups)
         self.block1_sam = SAM(feature_num, activation, feature_num, kernel_size=(3, 3), stride=1, groups = groups, padding='same')
-        self.output_channel = feature_num
+        self.output_channels = feature_num
 
     def forward(self, input):
         block1_output = self.block1_end(input)
         block1_output, block1_loss = self.block1_sam(block1_output, input)
         return block1_loss
 
-    def getOutputChannel(self):
-        return self.output_channel
+    def getOutputChannels(self):
+        return self.output_channels
