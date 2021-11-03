@@ -4,7 +4,11 @@ import torch.nn as nn
 
 class DenseNext18(nn.Module):
     def __init__(self, activation, in_channels, groups = 4, bias=True):
+<<<<<<< HEAD
+        super().__init__()
+=======
         super(DenseNext18, self).__init__()
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
         self.output_stride = 16
         self.output_branch_channels = [in_channels + 32 * 2, in_channels + 32 * 4, in_channels + 32 * 6, in_channels + 32 * 8]
         self.output_channels = self.output_branch_channels[3]

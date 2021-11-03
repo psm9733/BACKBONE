@@ -4,7 +4,11 @@ import torch.nn as nn
 
 class ResNet12(nn.Module):
     def __init__(self, activation, in_channels, bias = True):
+<<<<<<< HEAD
+        super().__init__()
+=======
         super(ResNet12, self).__init__()
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
         self.output_stride = 16
         self.output_branch_channels = [64, 128, 256, 1024]
         self.output_channels = self.output_branch_channels[3]
@@ -28,7 +32,11 @@ class ResNet12(nn.Module):
 
 class ResNet24(nn.Module):
     def __init__(self, activation, in_channels, bias = True):
+<<<<<<< HEAD
+        super().__init__()
+=======
         super(ResNet24, self).__init__()
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
         self.output_stride = 16
         self.output_branch_channels = [256, 512, 1024, 2048]
         self.output_channels = self.output_branch_channels[3]
@@ -63,7 +71,11 @@ class ResNet24(nn.Module):
 
 class ResNet48(nn.Module):
     def __init__(self, activation, in_channels, bias = True):
+<<<<<<< HEAD
+        super().__init__()
+=======
         super(ResNet48, self).__init__()
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
         self.output_stride = 16
         self.output_branch_channels = [256, 512, 1024, 2048]
         self.output_channels = self.output_branch_channels[3]

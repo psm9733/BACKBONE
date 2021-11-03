@@ -6,21 +6,26 @@ from network.hourglassnet.hourglassnet import *
 from network.unet.unet import *
 from network.resnet.resnet import *
 from network.regnet.regnet import *
-from utils.utils import weight_initialize
+from network.common.blocks import *
+from network.common.neck import *
+from network.common.head import *
+from utils.utils import weight_initialize, get_anchors
 from torchsummary import summary
 from adamp import *
 from utils.metric import TopkAccuracy
 from utils.losses import PSNRLoss, WingLoss, AdaptiveWingLoss
+from detection.config import *
 from torchvision.utils import make_grid
 from torch.utils.data import DataLoader
 from utils.generator import *
+from utils.losses import YoloLoss
 import pytorch_lightning as pl
 import numpy as np
 import torch.nn
 
 class Classification(pl.LightningModule):
     def __init__(self, task, batch_size=1, train_aug=None, val_aug=None, workers=4, learning_rate=1e-3, weight_decay=1e-4):
-        super(Classification, self).__init__()
+        super().__init__()
         # hyper parameter
         self.task = task
         self.classes = -1
@@ -43,7 +48,13 @@ class Classification(pl.LightningModule):
 
         # model setting
         self.activation = nn.ReLU()
+<<<<<<< HEAD
+        self.stem_in_channels_list = [self.in_channels, 32, 64, 32, 64]
+        self.stem_out_channels_list = [32, 64, 128, 64, 128]
+        self.stem = StemBlock_5(self.stem_in_channels_list, self.stem_out_channels_list, self.activation, bias=True)
+=======
         self.stem = StemBlock(self.in_channels, self.activation, bias=True)
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
         self.backbone = RegNetX_200MF_custom(self.activation, self.stem.getOutputChannels())
         self.classification_head = nn.Sequential(
             Conv2D_BN(self.backbone.getOutputChannels(), self.activation, 1280, (1, 1)),
@@ -117,7 +128,7 @@ class Classification(pl.LightningModule):
 
 class DeNoising(pl.LightningModule):
     def __init__(self, feature_num, input_shape, batch_size=1, train_aug=None, val_aug=None, workers=4, learning_rate=1e-7, weight_decay=1e-4):
-        super(DeNoising, self).__init__()
+        super().__init__()
         self.activation = nn.PReLU()
         self.lr = learning_rate
         self.input_shape = input_shape
@@ -194,10 +205,11 @@ class DeNoising(pl.LightningModule):
 
 class E3GazeNet(pl.LightningModule):
     def __init__(self, input_shape, batch_size = 1, train_aug = None, val_aug = None, workers = 4, learning_rate = 1e-4, weight_decay = 1e-4):
-        super(E3GazeNet, self).__init__()
+        super().__init__()
         self.activation = nn.ReLU()
         self.lr = learning_rate
         self.input_shape = input_shape
+        self.in_channels = input_shape[0]
         self.iris_points = 32
         self.eyelid_points = 16
         self.gaze_vector_num = 3
@@ -209,19 +221,41 @@ class E3GazeNet(pl.LightningModule):
         self.val_batch_size = max(1, int(self.batch_size / 4))
         self.workers = workers
         self.weight_decay = weight_decay
+<<<<<<< HEAD
+        self.stem_in_channels_list = [self.in_channels, 32, 64, 32, 64]
+        self.stem_out_channels_list = [32, 64, 32, 64, 128]
+        self.stem = StemBlock_5(self.stem_in_channels_list, self.stem_out_channels_list, self.activation, bias=True)
+        self.segmentation_backbone = HourglassNet(self.activation, feature_num=self.feature_num, mode = "bilinear", bias=True)
+        self.segmentation_output = Conv2D_BN(self.feature_num, activation=self.activation, out_channels=2, kernel_size=(3, 3), stride=1, padding='same', bias=True)
+        self.regression_backbone = RegNetY_200MF_custom(self.activation, 3, bias=True)     # gray channels : 1, seg channels : 2
+        self.landmark_head = nn.Sequential(
+            nn.Flatten(),
+            # Conv2D_BN(self.regression_backbone.getOutputChannels(), self.activation, 1280, (1, 1)),
+            # nn.AdaptiveAvgPool2d(1),
+            # nn.Conv2d(1280, self.output_dense_num, 1)
+            nn.Linear(int(self.input_shape[1] / self.regression_backbone.getOutputStride() * self.input_shape[2] / self.regression_backbone.getOutputStride() * self.regression_backbone.getOutputChannels()), self.output_dense_num)
+=======
         self.stem = Conv2D_BN(self.input_shape[0], activation=self.activation, out_channels=self.feature_num, kernel_size=(3, 3), stride=1, padding='same')
         self.segmentation_backbone = HourglassNet(self.activation, feature_num=self.feature_num, mode = "bilinear")
         self.segmentation_output = Conv2D_BN(self.feature_num, activation=self.activation, out_channels=2, kernel_size=(3, 3), stride=1, padding='same')
         self.regression_backbone = RegNetY_200MF_custom(self.activation, 3)     # gray channels : 1, seg channels : 2
-        self.landmark_head = nn.Sequential(
+        self.landmark_head1 = nn.Sequential(
             nn.Flatten(),
             nn.Linear(int(self.input_shape[1] / self.regression_backbone.getOutputStride() * self.input_shape[2] / self.regression_backbone.getOutputStride() * self.regression_backbone.getOutputChannels()), self.output_dense_num)
+        )
+
+        self.landmark_head2 = nn.Sequential(
+            Conv2D_BN(self.regression_backbone.getOutputChannels(), self.activation, 1280, (1, 1)),
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(1280, self.output_dense_num, 1)
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
         )
         weight_initialize(self.stem)
         weight_initialize(self.segmentation_backbone)
         weight_initialize(self.segmentation_output)
         weight_initialize(self.regression_backbone)
-        weight_initialize(self.landmark_head)
+        weight_initialize(self.landmark_head1)
+        weight_initialize(self.landmark_head2)
 
     def setup(self, stage):
         self.train_gen = EyegazeGenerator('/home/fssv1/sangmin/backbone/dataset/unityeyes/train', self.train_aug)
@@ -239,7 +273,11 @@ class E3GazeNet(pl.LightningModule):
         seg_output = self.segmentation_output(output)
         reg_input = torch.cat([seg_output, input], dim=1)
         output = self.regression_backbone(reg_input)[3]
+<<<<<<< HEAD
         reg_output = self.landmark_head(output)
+=======
+        reg_output = self.landmark_head1(output)
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
         return {'seg_pred': seg_output, 'reg_pred': reg_output}
 
     def configure_optimizers(self):
@@ -288,44 +326,44 @@ class E3GazeNet(pl.LightningModule):
         self.log("loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
-    def validation_step(self, val_batch, batch_idx):
-        img = val_batch['img']
-        output = self.forward(img)
-
-        seg_img = val_batch['seg_img']
-        iris_landmark = val_batch['iris_landmark']
-        eyelid_landmark = val_batch['eyelid_landmark']
-        gaze_vector = val_batch['vector']
-
-        seg_pred = output['seg_pred']
-        seg_loss_fn = torch.nn.MSELoss()
-        seg_loss = seg_loss_fn(seg_pred, seg_img)
-
-        reg_pred = output['reg_pred']
-        total_landmark = torch.cat([iris_landmark, eyelid_landmark], dim=1)
-        total_landmark = total_landmark.view(self.val_batch_size, -1)
-
-        lm_reg_pred = reg_pred[:, :(self.iris_points + self.eyelid_points) * 2]
-        lm_reg_loss_fn = WingLoss()
-        lm_reg_loss = lm_reg_loss_fn(lm_reg_pred, total_landmark)
-
-        vector_reg_pred = reg_pred[:, (self.iris_points + self.eyelid_points) * 2:]
-        vector_reg_loss_fn = nn.MSELoss()
-        vector_reg_loss = vector_reg_loss_fn(vector_reg_pred, gaze_vector)
-
-        w1 = 5
-        w2 = 1
-        w3 = int((self.iris_points + self.eyelid_points) / self.gaze_vector_num)
-        loss = w1 * seg_loss + w2 * lm_reg_loss + w3 * vector_reg_loss
-        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
-        return loss
+    # def validation_step(self, val_batch, batch_idx):
+    #     img = val_batch['img']
+    #     output = self.forward(img)
+    #
+    #     seg_img = val_batch['seg_img']
+    #     iris_landmark = val_batch['iris_landmark']
+    #     eyelid_landmark = val_batch['eyelid_landmark']
+    #     gaze_vector = val_batch['vector']
+    #
+    #     seg_pred = output['seg_pred']
+    #     seg_loss_fn = torch.nn.MSELoss()
+    #     seg_loss = seg_loss_fn(seg_pred, seg_img)
+    #
+    #     reg_pred = output['reg_pred']
+    #     total_landmark = torch.cat([iris_landmark, eyelid_landmark], dim=1)
+    #     total_landmark = total_landmark.view(self.val_batch_size, -1)
+    #
+    #     lm_reg_pred = reg_pred[:, :(self.iris_points + self.eyelid_points) * 2]
+    #     lm_reg_loss_fn = WingLoss()
+    #     lm_reg_loss = lm_reg_loss_fn(lm_reg_pred, total_landmark)
+    #
+    #     vector_reg_pred = reg_pred[:, (self.iris_points + self.eyelid_points) * 2:]
+    #     vector_reg_loss_fn = nn.MSELoss()
+    #     vector_reg_loss = vector_reg_loss_fn(vector_reg_pred, gaze_vector)
+    #
+    #     w1 = 5
+    #     w2 = 1
+    #     w3 = int((self.iris_points + self.eyelid_points) / self.gaze_vector_num)
+    #     loss = w1 * seg_loss + w2 * lm_reg_loss + w3 * vector_reg_loss
+    #     self.log("val_loss", loss, on_epoch=True, prog_bar=True)
+    #     return loss
 
     def validation_epoch_end(self, outputs):
         self.log("lr", self.scheduler.get_lr()[0])
 
 class Scaled_Yolov4(pl.LightningModule):
     def __init__(self, input_shape, classes, batch_size=1, train_aug=None, val_aug=None, workers=4, learning_rate=1e-4, weight_decay=1e-4):
-        super(Scaled_Yolov4, self).__init__()
+        super().__init__()
         # hyper parameter
         self.input_shape = input_shape
         self.classes = classes
@@ -341,6 +379,24 @@ class Scaled_Yolov4(pl.LightningModule):
 
         # model setting
         self.activation = nn.ReLU()
+<<<<<<< HEAD
+        self.anchor = get_anchors(ANCHOR_INFO_PATH)
+        self.branch_num = 3
+        self.anchor_num = int(len(self.anchor) / self.branch_num)
+        self.stem_in_channels_list = [self.in_channels, 32, 64]
+        self.stem_out_channels_list = [32, 64, 128]
+        self.fpn_out_channels_list = [128, 256, 512]
+        self.head_out_channels_list = [int(self.anchor_num * (self.classes + 5)), int(self.anchor_num * (self.classes + 5)), int(self.anchor_num * (self.classes + 5))]
+        self.stem = StemBlock_3(self.stem_in_channels_list, self.stem_out_channels_list, self.activation, bias=True)
+        self.backbone = RegNetX_3stage(self.activation, self.stem.getOutputChannels(), bias=True)
+        self.fpn_neck = FPN_3branch(self.backbone.getOutputBranchChannels()[len(self.backbone.getOutputBranchChannels()) - self.branch_num:self.branch_num + 1], self.fpn_out_channels_list, self.activation, bias=True)
+        self.yolo_head = Yolo_3branch(self.fpn_neck.getOutputBranchChannels(), self.head_out_channels_list, bias=True)
+        self.output_shape = [
+            [self.head_out_channels_list[0], int(input_shape[1] / (self.stem.getOutputStride() * self.backbone.getOutputStride()) * 4), int(input_shape[2] / (self.stem.getOutputStride() * self.backbone.getOutputStride()) * 4)],
+            [self.head_out_channels_list[1], int(input_shape[1] / (self.stem.getOutputStride() * self.backbone.getOutputStride()) * 2), int(input_shape[2] / (self.stem.getOutputStride() * self.backbone.getOutputStride()) * 2)],
+            [self.head_out_channels_list[2], int(input_shape[1] / (self.stem.getOutputStride() * self.backbone.getOutputStride()) * 1), int(input_shape[2] / (self.stem.getOutputStride() * self.backbone.getOutputStride()) * 1)],
+        ]
+=======
         self.stem = StemBlock(self.in_channels, self.activation, bias=True)
         self.backbone = ResNet48(self.activation, self.stem.getOutputChannels())
         self.yolo_head = nn.Sequential(
@@ -352,9 +408,11 @@ class Scaled_Yolov4(pl.LightningModule):
             [input_shape[1] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 1, input_shape[2] * self.stem.getOutputStride() * self.backbone.getOutputStride() * 1],
         ]
 
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
         weight_initialize(self.stem)
         weight_initialize(self.backbone)
-        # weight_initialize(self.yolo_head)
+        weight_initialize(self.fpn_neck)
+        weight_initialize(self.yolo_head)
 
     def set_train_path(self, dir_path):
         self.train_dir = dir_path
@@ -363,22 +421,19 @@ class Scaled_Yolov4(pl.LightningModule):
         self.valid_dir = dir_path
 
     def setup(self, stage):
-        self.train_gen = YoloGenerator(self.train_dir, self.input_shape, self.classes, True, self.train_aug)
-        self.val_gen = YoloGenerator(self.valid_dir, self.input_shape, self.classes, False, self.val_aug)
+        self.train_gen = YoloGenerator(self.train_dir, self.input_shape, self.output_shape, self.classes, self.anchor, True, self.train_aug)
+        self.val_gen = YoloGenerator(self.valid_dir, self.input_shape, self.output_shape, self.classes, self.anchor, False, self.val_aug)
 
     def forward(self, input):
         stem_out = self.stem(input)
-        branch1, branch2, branch3 = self.backbone(stem_out)[1:4]
-        # head_out = self.yolo_head(branch1, branch2, branch3)
-        # b, c, _, _ = head_out.size()
-        # output = head_out.view(b, c)
-        return {"pred": branch3}
+        big_out, middle_out, small_out = self.backbone(stem_out)[len(self.backbone.getOutputBranchChannels()) - self.branch_num:self.branch_num + 1]
+        big_out, middle_out, small_out = self.fpn_neck(big_out, middle_out, small_out)
+        big_out, middle_out, small_out = self.yolo_head(big_out, middle_out, small_out)
+        return {"big_out": big_out, "middle_out": middle_out, "small_out": small_out}
 
     def configure_optimizers(self):
         self.optimizer = AdamP(self.parameters(), self.lr, weight_decay=self.weight_decay)
-        self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.lr, max_lr=self.lr*10,
-                                                      step_size_up=20, cycle_momentum=False,
-                                                      mode='triangular2', gamma=0.995, verbose=True)
+        self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.lr, max_lr=self.lr*10, step_size_up=20, cycle_momentum=False, mode='triangular2', gamma=0.995, verbose=True)
         return [self.optimizer], [self.scheduler]
 
     def train_dataloader(self):
@@ -389,18 +444,47 @@ class Scaled_Yolov4(pl.LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         x = train_batch['img']
-        y_true = train_batch['y_true']
-        y_pred = self.forward(x)["pred"]
-        loss_fn = torch.nn.CrossEntropyLoss()
+        gt_big_out = train_batch['big_out']
+        gt_middle_out = train_batch['middle_out']
+        gt_small_out = train_batch['small_out']
+        y_true = [gt_big_out, gt_middle_out, gt_small_out]
+        gt_big_out_shape = gt_big_out.shape
+        gt_middle_out_shape = gt_middle_out.shape
+        gt_small_out_shape = gt_small_out.shape
+        pred_big_out = self.forward(x)["big_out"]
+        pred_middle_out = self.forward(x)["middle_out"]
+        pred_small_out = self.forward(x)["small_out"]
+        pred_big_out = pred_big_out.reshape(gt_big_out_shape[0], gt_big_out_shape[1], gt_big_out_shape[2], gt_big_out_shape[3], gt_big_out_shape[4])
+        pred_middle_out = pred_middle_out.reshape(gt_middle_out_shape[0], gt_middle_out_shape[1], gt_middle_out_shape[2], gt_middle_out_shape[3], gt_middle_out_shape[4])
+        pred_small_out = pred_small_out.reshape(gt_small_out_shape[0], gt_small_out_shape[1], gt_small_out_shape[2], gt_small_out_shape[3], gt_small_out_shape[4])
+        y_pred = [pred_big_out, pred_middle_out, pred_small_out]
+        loss_fn = YoloLoss(self.classes, self.branch_num, self.anchor, self.batch_size)
         loss = loss_fn(y_pred, y_true)
+        self.log("lr", self.scheduler.get_lr()[0])
+        self.log("loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
         x = val_batch['img']
-        y_true = val_batch['y_true']
-        y_pred = self.forward(x)["pred"]
-        loss_fn = torch.nn.CrossEntropyLoss()
+        gt_big_out = val_batch['big_out']
+        gt_middle_out = val_batch['middle_out']
+        gt_small_out = val_batch['small_out']
+        y_true = [gt_big_out, gt_middle_out, gt_small_out]
+        gt_big_out_shape = gt_big_out.shape
+        gt_middle_out_shape = gt_middle_out.shape
+        gt_small_out_shape = gt_small_out.shape
+
+        pred_big_out = self.forward(x)["big_out"]
+        pred_middle_out = self.forward(x)["middle_out"]
+        pred_small_out = self.forward(x)["small_out"]
+        pred_big_out = pred_big_out.reshape(gt_big_out_shape[0], gt_big_out_shape[1], gt_big_out_shape[2], gt_big_out_shape[3], gt_big_out_shape[4])
+        pred_middle_out = pred_middle_out.reshape(gt_middle_out_shape[0], gt_middle_out_shape[1], gt_middle_out_shape[2], gt_middle_out_shape[3], gt_middle_out_shape[4])
+        pred_small_out = pred_small_out.reshape(gt_small_out_shape[0], gt_small_out_shape[1], gt_small_out_shape[2], gt_small_out_shape[3], gt_small_out_shape[4])
+        y_pred = [pred_big_out, pred_middle_out, pred_small_out]
+
+        loss_fn = YoloLoss(self.classes, self.branch_num, self.anchor, self.batch_size)
         loss = loss_fn(y_pred, y_true)
+        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_epoch_end(self, outputs):

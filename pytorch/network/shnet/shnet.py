@@ -6,7 +6,7 @@ import torch.nn as nn
 
 class SHNet(nn.Module):          #StackedHourGlass
     def __init__(self, activation, in_channels, feature_num = 512, groups = 32, mode = "", bias = True):
-        super(SHNet, self).__init__()
+        super().__init__()
         self.block1_end = HourglassBlock(activation, in_channels, feature_num, mode, padding='same', groups = groups)
         self.block1_sam = SAM(feature_num, activation, feature_num, kernel_size=(3, 3), stride=1, groups = groups, padding='same')
         self.output_channels = feature_num

@@ -6,10 +6,11 @@ import cv2
 
 count = 0
 is_txt = 0
-txt_dst = "../dataset_info/train.txt"
+train_txt = "../detection/dataset_info/train.txt"
+valid_txt = "../detection/dataset_info/valid.txt"
 train_list = list(set(glob.glob("/home/fssv1/sangmin/backbone/dataset/coco/train2017/**/*.jpg", recursive=True)))
 valid_list = list(set(glob.glob("/home/fssv1/sangmin/backbone/dataset/coco/val2017/**/*.jpg", recursive=True)))
-with open("../dataset_info/train.txt", "w") as f:
+with open(train_txt, "w") as f:
 	print("start make train.txt")
 	fcount = 0
 	for img_path in tqdm(train_list):
@@ -35,20 +36,28 @@ with open("../dataset_info/train.txt", "w") as f:
 							y1 = float(cy) - float(h) / 2
 							x2 = float(cx) + float(w) / 2
 							y2 = float(cy) + float(h) / 2
+							if x1 < 0:
+								x1 = 0
+							if y1 < 0:
+								y1 = 0
+							if x2 > 1:
+								x2 = 1
+							if y2 > 1:
+								y2 = 1
 							ctc += " " + str(x1) + "," + str(y1) + "," + str(x2) + "," + str(y2) + "," + cls
 							if index == len(bbox_line) - 1:
 								ctc += "\n"
 				if fcount == 0:
-					f = open(txt_dst, "w")
+					f = open(train_txt, "w")
 					f.write(ctc)
 					f.close()
 				else:
-					f = open(txt_dst, "a")
+					f = open(train_txt, "a")
 					f.write(ctc)
 					f.close()
 				fcount += 1
 
-with open("../dataset_info/valid.txt", "w") as f:
+with open(valid_txt, "w") as f:
 	print("start make valid.txt")
 	for img in tqdm(valid_list):
 		is_txt = 0

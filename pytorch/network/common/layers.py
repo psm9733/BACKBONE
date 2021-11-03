@@ -4,7 +4,7 @@ from utils.utils import getPadding
 
 class Conv2D_BN(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride=1, padding='same', groups=1, dilation=1, bias=False):
-        super(Conv2D_BN, self).__init__()
+        super().__init__()
         self.padding = getPadding(kernel_size, padding)
         self.activation = activation
         in_channels = math.floor(in_channels)
@@ -21,7 +21,7 @@ class Conv2D_BN(nn.Module):
 
 class TransitionLayer(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride=1, padding=0, groups=1, dilation=1, bias=True, padding_mode='zeros'):
-        super(TransitionLayer, self).__init__()
+        super().__init__()
         self.padding = getPadding(kernel_size, padding)
         self.conv2d_BN = Conv2D_BN(in_channels, activation, out_channels, kernel_size=kernel_size, stride=stride, padding=self.padding)
         # self.Max_pool = nn.MaxPool2d(kernel_size=(2, 2), stride = 2)

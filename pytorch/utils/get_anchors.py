@@ -97,7 +97,7 @@ class KmeansAnchors:
 
 if __name__ == "__main__":
     cluster_number = 9
-    dir_path = "../dataset_info/"
-    target_list_file = "../dataset_info/train.txt"
+    dir_path = "../detection/dataset_info/"
+    target_list_file = "../detection/dataset_info/train.txt"
     kmeans = KmeansAnchors(cluster_number, dir_path, target_list_file)
     kmeans.txt2clusters()

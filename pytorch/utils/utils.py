@@ -49,8 +49,14 @@ def get_annotations(annotations_path, extensions = ".txt", recursive=True):
                 dataset.append([float(w), float(h)])
     return np.array(dataset)
 
-def cal_anchors(annotations_path, cluster_num = 9):
+def get_anchors(filepath):
     anchors = []
-    data = get_annotations(annotations_path)
-    kmeans(data, k=cluster_num)
+    with open(filepath, 'r') as file:
+        line = file.read()
+        line = line.split(" ")
+        for anchor in line:
+            anchor = anchor.split(",")
+            if len(anchor) == 2:
+                anchor = [float(anchor[0]), float(anchor[1])]
+                anchors.append(anchor)
     return anchors

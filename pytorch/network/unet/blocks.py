@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class UNetUpBlock(nn.Module):
     def __init__(self, in_channels, out_channels, bilinear=True):
-        super(UNetUpBlock, self).__init__()
+        super().__init__()
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
             self.conv = UNetSameBlock(in_channels, out_channels, in_channels // 2)
@@ -25,7 +25,7 @@ class UNetUpBlock(nn.Module):
 
 class UNetSameBlock(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None):
-        super(UNetSameBlock, self).__init__()
+        super().__init__()
         if not mid_channels:
             mid_channels = out_channels
         self.double_conv = nn.Sequential(
@@ -43,7 +43,7 @@ class UNetSameBlock(nn.Module):
 
 class UNetDownBlock(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None):
-        super(UNetDownBlock, self).__init__()
+        super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
             UNetSameBlock(in_channels, out_channels)
@@ -54,7 +54,7 @@ class UNetDownBlock(nn.Module):
 
 class UNetOutConv(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(UNetOutConv, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         self.sig = nn.Sigmoid()
 

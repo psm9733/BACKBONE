@@ -4,7 +4,7 @@ from network.common.layers import Conv2D_BN
 
 class DenseNextBlock(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride, padding='same', groups=1, dilation=1, bias=True):
-        super(DenseNextBlock, self).__init__()
+        super().__init__()
         self.kernel_size = None
         self.branch1_list = nn.ModuleList([])
         self.branch2_list = nn.ModuleList([])

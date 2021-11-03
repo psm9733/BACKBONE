@@ -1,3 +1,5 @@
+import cv2
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.nn.functional import mse_loss as mse
@@ -103,7 +105,7 @@ class PSNRLoss(nn.Module):
     """
 
     def __init__(self, max_val: float) -> None:
-        super(PSNRLoss, self).__init__()
+        super().__init__()
         self.max_val: float = max_val
 
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
@@ -112,20 +114,20 @@ class PSNRLoss(nn.Module):
 
 class AdaptiveWingLoss(nn.Module):
     def __init__(self, omega=14, theta=0.5, epsilon=1, alpha=2.1):
-        super(AdaptiveWingLoss, self).__init__()
+        super().__init__()
         self.omega = omega
         self.theta = theta
         self.epsilon = epsilon
         self.alpha = alpha
 
-    def forward(self, pred, target):
+    def forward(self, pred, gt):
         '''
         :param pred: BxNxHxH
         :param target: BxNxHxH
         :return:
         '''
 
-        y = target
+        y = gt
         y_hat = pred
         delta_y = (y - y_hat).abs()
         delta_y1 = delta_y[delta_y < self.theta]
@@ -141,12 +143,12 @@ class AdaptiveWingLoss(nn.Module):
 
 class WingLoss(nn.Module):
     def __init__(self, omega=10, epsilon=2):
-        super(WingLoss, self).__init__()
+        super().__init__()
         self.omega = omega
         self.epsilon = epsilon
 
-    def forward(self, pred, target):
-        y = target
+    def forward(self, pred, gt):
+        y = gt
         y_hat = pred
         delta_y = (y - y_hat).abs()
         delta_y1 = delta_y[delta_y < self.omega]
@@ -155,3 +157,134 @@ class WingLoss(nn.Module):
         C = self.omega - self.omega * math.log(1 + self.omega / self.epsilon)
         loss2 = delta_y2 - C
         return (loss1.sum() + loss2.sum()) / (len(loss1) + len(loss2))
+
+class YoloLoss(nn.Module):
+    def __init__(self, classes, branch_num, anchor, batch_size, loss_type='diou'):
+        super().__init__()
+        self.classes = classes
+        self.branch_num = branch_num
+        self.anchor = anchor
+        self.batch_size = batch_size
+        self.anchor_num = int(len(anchor) / self.branch_num)
+        self.loss_type = loss_type
+        self.lamda_coord = 5
+        self.lamda_noobj = 0.5
+        self.epsilon = 1e-7
+
+    def euclidean_distance(self, pred, gt):
+        '''
+            Example:
+                batch = 4, anchor_num = 3, class = 80
+                ->  pred =  [batch, anchor_num, 5 + class]
+                ->  gt = [batch, anchor_num, 5 + class]
+        '''
+        return torch.sqrt(torch.pow(pred[:, :, 0:1, :, :] - gt[:, :, 0:1, :, :], 2) + torch.pow(pred[:, :, 1:2, :, :] - gt[:, :, 1:2, :, :], 2))
+
+    def get_iou(self, pred, gt):
+        '''
+            Example:
+                batch = 4, anchor_num = 3, class = 80
+                ->  pred =  [batch, anchor_num, 5 + class]
+                ->  gt = [batch, anchor_num, 5 + class]
+        '''
+        pred_xy = pred[:, :, 1:3, :, :]
+        pred_wh = pred[:, :, 3:5, :, :]
+        pred_mins = pred_xy - pred_wh / 2
+        pred_maxs = pred_xy + pred_wh / 2
+        gt_xy = gt[:, :, 1:3, :, :]
+        gt_wh = gt[:, :, 3:5, :, :]
+        gt_mins = gt_xy - gt_wh / 2
+        gt_maxs = gt_xy + gt_wh / 2
+        intersect_min = torch.maximum(pred_mins, gt_mins)
+        intersect_max = torch.minimum(pred_maxs, gt_maxs)
+        intersect_wh = intersect_max - intersect_min
+        intersect_wh = torch.maximum(intersect_wh, torch.zeros_like(intersect_wh))
+
+        pred_area = pred_wh[:, :, 0:1, :, :] * pred_wh[:, :, 1:2, :, :]
+        gt_area = gt_wh[:, :, 0:1, :, :] * gt_wh[:, :, 1:2, :, :]
+        intersect_area = intersect_wh[:, :, 0:1, :, :] * intersect_wh[:, :, 1:2, :, :]
+        union_area = pred_area + gt_area - intersect_area
+        iou = intersect_area / (union_area + self.epsilon)
+        iou_loss = torch.ones_like(iou) - iou
+        return iou_loss
+
+    def get_iou_panalty(self, pred, gt):
+        '''
+            Example:
+                batch = 4, anchor_num = 3, class = 80
+                ->  pred =  [batch, anchor_num, 5 + class]
+                ->  gt = [batch, anchor_num, 5 + class]
+        '''
+        pred_xy = pred[:, :, 1:3, :, :]
+        pred_wh = pred[:, :, 3:5, :, :]
+        pred_center = pred_wh / 2
+        pred_mins = pred_xy - pred_center
+        pred_maxs = pred_xy + pred_center
+
+        gt_xy = gt[:, :, 1:3, :, :]
+        gt_wh = gt[:, :, 3:5, :, :]
+        gt_center = gt_wh / 2
+        gt_mins = gt_xy - gt_center
+        gt_maxs = gt_xy + gt_center
+
+        big_bbox_mins = torch.minimum(pred_mins, gt_mins)
+        big_bbox_maxs = torch.minimum(pred_maxs, gt_maxs)
+
+        p = self.euclidean_distance(pred_center, gt_center)
+        c = self.euclidean_distance(big_bbox_maxs, big_bbox_mins)
+
+        panalty = torch.pow(p, 2) / (torch.pow(c, 2) + self.epsilon)
+        return panalty
+
+    def DIoULoss(self, pred, gt):
+        '''
+            Example:
+                batch = 4, anchor_num = 3, class = 80
+                ->  pred =  [batch, anchor_num, 5 + class, x, x]
+                ->  gt = [batch, anchor_num, 5 + class, x, x]
+        '''
+        diou_loss = self.get_iou(pred, gt) + self.get_iou_panalty(pred, gt)
+        return diou_loss
+
+    def clip_by_tensor(self, t, t_min, t_max):
+        t = t.float()
+        result = (t >= t_min).float() * t + (t < t_min).float() * t_min
+        result = (result <= t_max).float() * result + (result > t_max).float() * t_max
+        return result
+
+    def forward(self, pred, gt):
+        '''
+            Example:
+                batch = 4, anchor_num = 3, class = 80, branch_num = 3,  output_shape = [[76, 76], [38, 38], [19, 19]]
+                ->  pred =  [[batch, anchor_num, 5 + class, 76, 76], [batch, anchor_num, 5 + class, 38, 38], [batch, anchor_num, 5 + class, 16, 16]]
+                ->  gt = [[batch, anchor_num, 5 + class, 76, 76], [batch, anchor_num, 5 + class, 38, 38], [batch, anchor_num, 5 + class, 16, 16]]
+        '''
+        loss = 0
+        for branch_index in range(self.branch_num):
+            gt_branch = torch.clip(gt[branch_index], 0, 1)
+            pred_branch = torch.clip(pred[branch_index], 0, 1)
+            obj_mask = gt_branch[:, :, 0:1, :, :]
+            no_obj_mask = torch.ones_like(obj_mask) - obj_mask
+            pred_branch[:, :, 0:3, :, :] = torch.sigmoid(pred_branch[:, :, 0:3, :, :])
+            for anchor_index in range(self.anchor_num):
+                anchor = self.anchor[self.anchor_num * (self.branch_num - branch_index - 1) + anchor_index]
+                pred_branch[:, anchor_index, 3:4, :, :] = torch.exp(pred_branch[:, anchor_index, 3:4, :, :]) * anchor[0]
+                pred_branch[:, anchor_index, 4:5, :, :] = torch.exp(pred_branch[:, anchor_index, 4:5, :, :]) * anchor[1]
+            pred_branch[:, :, 5:, :, :] = torch.sigmoid(pred_branch[:, :, 5:, :, :])
+            conf_loss = nn.BCELoss(reduction='sum')(obj_mask * pred_branch[:, :, 0:1, :, :], gt_branch[:, :, 0:1, :, :]) / self.batch_size
+            negative_conf_loss = nn.BCELoss(reduction='sum')(no_obj_mask * pred_branch[:, :, 0:1, :, :], no_obj_mask * gt_branch[:, :, 0:1, :, :]) / self.batch_size
+            confidence_loss = conf_loss + self.lamda_noobj * negative_conf_loss
+            if self.loss_type == 'diou':
+                location_loss = torch.sum(obj_mask * self.DIoULoss(pred_branch, gt_branch)) / self.batch_size
+
+            class_loss = nn.BCELoss(reduction='sum')(obj_mask * pred_branch[:, :, 5:, :, :], obj_mask * gt_branch[:, :, 5:, :, :]) / self.batch_size
+            loss += confidence_loss
+            loss += class_loss
+            loss += location_loss
+            print("=================")
+            print("confidence_loss = ", conf_loss.item())
+            print("no confidence_loss = ", negative_conf_loss.item())
+            print("class_loss = ", class_loss.item())
+            print("location_loss = ", location_loss.item())
+        return loss
+

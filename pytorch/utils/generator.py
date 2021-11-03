@@ -13,8 +13,15 @@ import os
 import cv2
 import json
 import natsort
+<<<<<<< HEAD
+import logging
+from detection.config import *
+from utils.utils import unityeye_json_process, get_anchors
+
+=======
 from utils.config import *
 from utils.utils import unityeye_json_process
+>>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
 
 class Mnist(Dataset):
     def __init__(self, dataset_dir, is_train, one_hot, transform=None, num_classes = 10) -> None:
@@ -25,7 +32,7 @@ class Mnist(Dataset):
                    else: y = [class_idx] for torch.nn.CrossEntropyLoss
         : transform: albumentation transforms
         """
-        super(Mnist, self).__init__()
+        super().__init__()
         self.dataset_dir = dataset_dir
         self.transform = transform
         self.one_hot = one_hot
@@ -73,7 +80,7 @@ class ColorMnist(Dataset):
                    else: y = [class_idx] for torch.nn.CrossEntropyLoss
         : transform: albumentation transforms
         """
-        super(ColorMnist, self).__init__()
+        super().__init__()
         self.dataset_dir = dataset_dir
         self.color_list = color_list
         self.transform = transform
@@ -85,7 +92,6 @@ class ColorMnist(Dataset):
     def load_data(self):
         if self.is_train:
             self.image_list = glob.glob(self.dataset_dir + "/train/**/*.jpg", recursive=True)
-            random.shuffle(self.image_list)
         else:
             self.image_list = glob.glob(self.dataset_dir + "/test/**/*.jpg", recursive=True)
         self.label_list = dict()
@@ -122,7 +128,7 @@ class TinyImageNet(Dataset):
                    else: y = [class_idx] for torch.nn.CrossEntropyLoss
         : transform: albumentation transforms
         """
-        super(TinyImageNet, self).__init__()
+        super().__init__()
         self.transform = transform
         self.dataset_dir = dataset_dir
         self.one_hot = one_hot
@@ -174,7 +180,7 @@ class TinyImageNet(Dataset):
 
 class EyegazeGenerator(Dataset):
     def __init__(self, dataset_dir, transform=None) -> None:
-        super(EyegazeGenerator, self).__init__()
+        super().__init__()
         """
         : dataset_dir: data path
         : is_train: set whether load dataset as trainset or valid set
@@ -242,7 +248,7 @@ class EyegazeGenerator(Dataset):
 
 class DenoisingGenerator(Dataset):
     def __init__(self, dataset_dir, input_shape, is_train, transform=None) -> None:
-        super(DenoisingGenerator, self).__init__()
+        super().__init__()
         """
         : dataset_dir: data path
         : is_train: set whether load dataset as trainset or valid set
@@ -288,8 +294,8 @@ class DenoisingGenerator(Dataset):
         return {'img': x, 'y_true': y}
 
 class YoloGenerator(Dataset):
-    def __init__(self, dataset_dir, input_shape, classes, is_train, transform=None) -> None:
-        super(YoloGenerator, self).__init__()
+    def __init__(self, dataset_dir, input_shape, output_shape, classes, anchors, is_train, transform=None) -> None:
+        super().__init__()
         """
         : dataset_dir: data path
         : is_train: set whether load dataset as trainset or valid set
@@ -300,54 +306,113 @@ class YoloGenerator(Dataset):
         self.transform = transform
         self.is_train = is_train
         self.input_shape = input_shape
+        self.output_shape = output_shape
         self.classes = classes
         self.load_data()
-        self.anchors = self.get_anchors()
-
-    def get_anchors(self):
-        anchors = []
-        with open(ANCHOR_INFO_PATH, 'r') as file:
-            line = file.read()
-            line = line.split(" ")
-            for anchor in line:
-                anchor = anchor.split(",")
-                if len(anchor) == 2:
-                    anchor = [float(anchor[0]), float(anchor[1])]
-                    anchors.append(anchor)
-        return anchors
+        self.anchors = anchors
+        self.epsilon = 1e-7
 
     def load_data(self):
-        if self.is_train:
-            self.data = glob.glob(self.dataset_dir + '/**/*.jpg', recursive=True)
+        self.data = glob.glob(self.dataset_dir + '/**/*.jpg', recursive=True)
 
     def __len__(self):
         return len(self.data)
 
+    def get_iou(self, img_shape, anchor, target_wh):
+        '''
+            args:
+                img_shape:(c, h, w)
+                anchor:[w, h](0 ~ ?, int)
+                target_wh:[w, h](0 ~ 1, float)
+        '''
+        w1, h1 = anchor
+        w2, h2 = target_wh
+        w1 = int(w1 * img_shape[2])
+        w2 = int(w2 * img_shape[2])
+        h1 = int(h1 * img_shape[1])
+        h2 = int(h2 * img_shape[1])
+        inter_area = min(w1, w2) * min(h1, h2)
+        union_area = (w1 * h1) + w2 * h2 - inter_area
+        iou = inter_area / union_area
+        return iou
+
     def __getitem__(self, index):
+        # variable init
+        y_true = []
+        branch_num = len(self.output_shape)
+        anchor_num_per_branch = int(len(self.anchors) / branch_num)
+        for branch_index in range(branch_num):
+            filter_width, h, w = self.output_shape[branch_index]
+            grid = np.zeros((anchor_num_per_branch, int(filter_width / anchor_num_per_branch), h, w), dtype=np.float32)
+            y_true.append(grid)
+
         img_path = self.data[index]
         img = cv2.imread(img_path)
-        img = img.astype(np.float32) / 255.
-        if self.transform:
-            x = self.transform(image=img)['image']
-        else:
-            x = transforms.ToTensor(img)
-
         txt_path = img_path.replace(".jpg", ".txt")
+        bboxes = []
         with open(txt_path, 'r') as file:
             lines = file.readlines()
             for line in lines:
                 cls, cx, cy, w, h = line.split(" ")
-                x1 = int((float(cx) - (float(w) / 2)) * img.shape[1])
-                y1 = int((float(cy) - (float(h) / 2)) * img.shape[0])
-                x2 = int((float(cx) + (float(w) / 2)) * img.shape[1])
-                y2 = int((float(cy) + (float(h) / 2)) * img.shape[0])
-            #     img = cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 1)
-            # cv2.imshow("Test", img)
-            # cv2.waitKey()
-        return {'img': x, 'y_true': []}
+                cx = int(float(cx) * img.shape[1])
+                cy = int(float(cy) * img.shape[0])
+                w = int(float(w) * img.shape[1])
+                h = int(float(h) * img.shape[0])
+                x_min = max(0, cx - w/2)
+                y_min = max(0, cy - h/2)
+                if w != 0 and h != 0:
+                    bboxes.append([x_min, y_min, w, h, cls])
+        if self.transform:
+            transformed = self.transform(image=img, bboxes=bboxes)
+            transformed_img = transformed['image'] / 255.
+            transformed_bboxes = transformed['bboxes']
+        else:
+            logging.error("Please add transform arg")
+        transformed_bboxes = np.array(transformed_bboxes, dtype=np.int32)
+        # show_img = np.transpose(transformed_img.numpy(), (1, 2, 0))
+        for bbox in transformed_bboxes:
+            x_min, y_min, w, h, cls = bbox
+            cx = (x_min + w / 2) / transformed_img.shape[2]
+            cy = (y_min + h / 2) / transformed_img.shape[1]
+            w = w / transformed_img.shape[2]
+            h = h / transformed_img.shape[1]
+            for branch_index in range(branch_num):
+                grid = y_true[branch_index]
+                '''
+                    grid:
+                        [anchor, cls, cy, cx]
+                '''
+                _, _, grid_h, grid_w = grid.shape
+                grid_x = int(cx * (grid_w - 1))
+                grid_y = int(cy * (grid_h - 1))
+                cell_w = int(transformed_img.shape[2] / grid_w)
+                cell_h = int(transformed_img.shape[1] / grid_h)
+                for anchor_index in range(anchor_num_per_branch):
+                    anchor = self.anchors[anchor_num_per_branch * (branch_num - branch_index - 1) + anchor_index]
+                    iou = self.get_iou(transformed_img.shape, anchor, [w, h])
+                    if iou > TRAINING_IOU_THRESHOLD:
+                        grid[anchor_index][0][grid_y][grid_x] = 1.0
+                        grid[anchor_index][1][grid_y][grid_x] = ((x_min + w / 2) % cell_w) / cell_w
+                        grid[anchor_index][2][grid_y][grid_x] = ((y_min + h / 2) % cell_h) / cell_h
+                        grid[anchor_index][3][grid_y][grid_x] = w
+                        grid[anchor_index][4][grid_y][grid_x] = h
+                        grid[anchor_index][5 + int(cls)][grid_y][grid_x] = 1.0
+                        # print(grid[anchor_index][1][grid_y][grid_x], grid[anchor_index][2][grid_y][grid_x])
+            # show_img = cv2.rectangle(show_img, (int((cx - w / 2) * transformed_img.shape[2]), int((cy - h / 2) * transformed_img.shape[1])), (int((cx + w / 2) * transformed_img.shape[2]), int((cy + h / 2) * transformed_img.shape[1])), (0, 255, 255))
+        # for branch_index in range(branch_num):
+        #     grid = y_true[branch_index]
+        #     for anchor_index in range(anchor_num_per_branch):
+        #         conf = grid[anchor_index, 0, :, :] * 255
+        #         cv2.imshow(str(self.output_shape[branch_index]) + "_" + str(anchor_index) + "_conf", cv2.resize(conf, (608, 608), interpolation=cv2.INTER_NEAREST))
+        # cv2.imshow("show_img", show_img)
+        # cv2.waitKey()
+        y_true_big = torch.Tensor(y_true[0])
+        y_true_middle = torch.Tensor(y_true[1])
+        y_true_small = torch.Tensor(y_true[2])
+        return {'img': transformed_img, 'big_out': y_true_big, 'middle_out': y_true_middle, 'small_out': y_true_small}
 
 if __name__ == '__main__':
-    input_shape = (3, 416, 416)
+    input_shape = (3, 608, 608)
     loader_Eyegaze = False
     loader_denoise = False
     loader_Yolo = True
@@ -358,11 +423,11 @@ if __name__ == '__main__':
             # albumentations.Sharpen(),
             # albumentations.Affine(),
             # albumentations.ColorJitter(),
-            # albumentations.Rotate(-90, 90),
-            # albumentations.ToGray()
+            # albumentations.ToGray(),
             # albumentations.RandomResizedCrop(height=input_shape[1], width=input_shape[2]),
             # albumentations.ColorJitter(),
-        ], 3, p=0.5),
+            albumentations.Flip()
+        ], 3, p=1),
         albumentations.OneOf([
             albumentations.Sharpen(p=1),
             albumentations.MotionBlur(p=1),
@@ -370,7 +435,7 @@ if __name__ == '__main__':
             # albumentations.Equalize(p=1),
         ], p=0.5),
         albumentations.pytorch.ToTensorV2(),
-    ])
+    ], bbox_params=albumentations.BboxParams(format='coco', min_visibility=0.1))
     # ], keypoint_params=albumentations.KeypointParams(format='xy'))
     # ], additional_targets={'image1': 'image', 'image2': 'image'})
     # loader = DataLoader(Mnist('S:/sangmin/backbone/dataset/mnist', True, True, transform), batch_size=128, shuffle=True, num_workers=1)
@@ -381,11 +446,11 @@ if __name__ == '__main__':
     if loader_Eyegaze:
         loader = DataLoader(EyegazeGenerator('S:/sangmin/backbone/dataset/unityeyes/train', transform), batch_size=1, shuffle=True, num_workers=1)
     if loader_Yolo:
-        loader = DataLoader(YoloGenerator('S:/sangmin/backbone/dataset/coco/train2017', (3, 416, 416), 91, True, transform))
+        loader = DataLoader(YoloGenerator('S:/sangmin/backbone/dataset/coco/train2017', input_shape, [[255, 64, 64], [255, 32, 32], [255, 16, 16]], 80, get_anchors(ANCHOR_INFO_PATH), True, transform))
     for i in range(2):
         print('epoch', i)
         for batch, sample in tqdm.tqdm(enumerate(loader), total=loader.__len__()):
-            if batch > 10:
+            if batch > 100:
                 break
             if loader_denoise:
                 img = sample['img'].numpy()[0]

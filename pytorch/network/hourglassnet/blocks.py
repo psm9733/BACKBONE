@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride, padding = 'same', groups = 1, dilation=1, bias = True):
-        super(ResidualBlock, self).__init__()
+        super().__init__()
         self.conv2d_bn_1 = Conv2D_BN(in_channels, activation, out_channels[0], kernel_size = (1, 1), stride = stride[0], padding = 0, bias=bias)
         self.conv2d_bn_2 = Conv2D_BN(out_channels[0], activation, out_channels[1], kernel_size = kernel_size, stride = stride[1], padding = padding, groups = groups, bias=bias)
         self.conv2d_bn_3 = Conv2D_BN(out_channels[1], activation, out_channels[2], kernel_size = (1, 1), stride = stride[2], padding = 0, bias=bias)
@@ -23,7 +23,7 @@ class ResidualBlock(nn.Module):
 
 class HourglassDownBlock(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, stride, padding='same', groups=1, dilation=1, bias=True):
-        super(HourglassDownBlock, self).__init__()
+        super().__init__()
         self.conv2d_bn_1 = Conv2D_BN(in_channels, activation, out_channels[0], kernel_size=(1, 1), stride=stride[0], padding=0, groups=groups, bias=bias)
         self.conv2d_bn_2 = Conv2D_BN(out_channels[0], activation, out_channels[1], kernel_size=kernel_size, stride=stride[1], padding=padding, groups=groups, bias=bias)
         self.conv2d_bn_3 = Conv2D_BN(out_channels[1], activation, out_channels[2], kernel_size=(1, 1), stride=stride[2], padding=0, groups=groups, bias=bias)
@@ -42,7 +42,7 @@ class HourglassDownBlock(nn.Module):
 
 class HourglassUpBlock(nn.Module):
     def __init__(self, in_channels, activation, out_channels, kernel_size, padding=0, groups=1, dilation=1, mode = 'nearest', bias=True):
-        super(HourglassUpBlock, self).__init__()
+        super().__init__()
         if mode == 'nearest' or mode == 'bilinear':
             self.up = nn.Upsample(scale_factor=2, mode=mode, align_corners=True)
         else:
@@ -61,7 +61,7 @@ class HourglassUpBlock(nn.Module):
 
 class HourglassModule(nn.Module):
     def __init__(self, activation, feature_num = 256, mode = "", padding = 'same', groups = 32, bias = True):
-        super(HourglassModule, self).__init__()
+        super().__init__()
         self.downblock1 = HourglassDownBlock(in_channels=feature_num, activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(4, 4), stride=(1, 2, 1), padding=padding, groups = 1, bias=bias)
         self.downblock2 = HourglassDownBlock(in_channels=feature_num, activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(4, 4), stride=(1, 2, 1), padding=padding, groups = groups, bias=bias)
         self.downblock3 = HourglassDownBlock(in_channels=feature_num, activation=activation, out_channels=(feature_num, int(feature_num / 2), feature_num), kernel_size=(4, 4), stride=(1, 2, 1), padding=padding, groups = groups, bias=bias)

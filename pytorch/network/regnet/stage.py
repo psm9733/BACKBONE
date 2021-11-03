@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class RegNetXStage(nn.Module):
     def __init__(self, activation, block_num, in_channels, block_width, bottleneck_ratio, groups=1, padding='same', dilation=1, bias=True):
-        super(RegNetXStage, self).__init__()
+        super().__init__()
         self.stage = nn.ModuleList([])
         for index in range(0, block_num):
             if index == 0:
@@ -19,7 +19,7 @@ class RegNetXStage(nn.Module):
 
 class RegNetYStage(nn.Module):
     def __init__(self, activation, block_num, in_channels, block_width, bottleneck_ratio, groups=1, padding='same', dilation=1, bias=True):
-        super(RegNetYStage, self).__init__()
+        super().__init__()
         self.stage = nn.ModuleList([])
         for index in range(0, block_num):
             if index == 0:
