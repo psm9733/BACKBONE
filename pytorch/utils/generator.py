@@ -13,15 +13,9 @@ import os
 import cv2
 import json
 import natsort
-<<<<<<< HEAD
 import logging
 from detection.config import *
 from utils.utils import unityeye_json_process, get_anchors
-
-=======
-from utils.config import *
-from utils.utils import unityeye_json_process
->>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1
 
 class Mnist(Dataset):
     def __init__(self, dataset_dir, is_train, one_hot, transform=None, num_classes = 10) -> None:
@@ -318,22 +312,34 @@ class YoloGenerator(Dataset):
     def __len__(self):
         return len(self.data)
 
-    def get_iou(self, img_shape, anchor, target_wh):
+    def get_iou(self, img_shape, anchor, target):
         '''
             args:
                 img_shape:(c, h, w)
-                anchor:[w, h](0 ~ ?, int)
-                target_wh:[w, h](0 ~ 1, float)
+                anchor:[cx, cy, w, h](0 ~ 1, 0 ~ 1, 0 ~ 1, int)
+                target_wh:[cx, cy, w, h](0 ~ 1, 0 ~ 1, 0 ~ 1, 0 ~ 1, float)
         '''
-        w1, h1 = anchor
-        w2, h2 = target_wh
-        w1 = int(w1 * img_shape[2])
-        w2 = int(w2 * img_shape[2])
-        h1 = int(h1 * img_shape[1])
-        h2 = int(h2 * img_shape[1])
-        inter_area = min(w1, w2) * min(h1, h2)
-        union_area = (w1 * h1) + w2 * h2 - inter_area
-        iou = inter_area / union_area
+        cx1, cy1, w1, h1 = anchor
+        cx2, cy2, w2, h2 = target
+
+        # box = (x1, y1, x2, y2)
+        box1 = [cx1 - w1 / 2, cy1 - h1 / 2, cx1 + w1 / 2, cy1 + h1 / 2]
+        box2 = [cx2 - w2 / 2, cy2 - h2 / 2, cx2 + w2 / 2, cy2 + h2 / 2]
+        box1_area = (box1[2] - box1[0] + 1) * (box1[3] - box1[1] + 1)
+        box2_area = (box2[2] - box2[0] + 1) * (box2[3] - box2[1] + 1)
+
+        # obtain x1, y1, x2, y2 of the intersection
+        x1 = max(box1[0], box2[0])
+        y1 = max(box1[1], box2[1])
+        x2 = min(box1[2], box2[2])
+        y2 = min(box1[3], box2[3])
+
+        # compute the width and height of the intersection
+        w = max(0, x2 - x1 + 1)
+        h = max(0, y2 - y1 + 1)
+
+        inter = w * h
+        iou = inter / (box1_area + box2_area - inter)
         return iou
 
     def __getitem__(self, index):
@@ -371,6 +377,16 @@ class YoloGenerator(Dataset):
         transformed_bboxes = np.array(transformed_bboxes, dtype=np.int32)
         # show_img = np.transpose(transformed_img.numpy(), (1, 2, 0))
         for bbox in transformed_bboxes:
+            max_iou = 0
+            select_iou_anchor_index = -1
+            select_grid_y = -1
+            select_grid_x = -1
+            select_bbox = []
+            '''
+                select_bbox:
+                    [conf, cx, cy, w, h, cls]
+            '''
+            select_branch_index = -1
             x_min, y_min, w, h, cls = bbox
             cx = (x_min + w / 2) / transformed_img.shape[2]
             cy = (y_min + h / 2) / transformed_img.shape[1]
@@ -389,16 +405,22 @@ class YoloGenerator(Dataset):
                 cell_h = int(transformed_img.shape[1] / grid_h)
                 for anchor_index in range(anchor_num_per_branch):
                     anchor = self.anchors[anchor_num_per_branch * (branch_num - branch_index - 1) + anchor_index]
-                    iou = self.get_iou(transformed_img.shape, anchor, [w, h])
-                    if iou > TRAINING_IOU_THRESHOLD:
-                        grid[anchor_index][0][grid_y][grid_x] = 1.0
-                        grid[anchor_index][1][grid_y][grid_x] = ((x_min + w / 2) % cell_w) / cell_w
-                        grid[anchor_index][2][grid_y][grid_x] = ((y_min + h / 2) % cell_h) / cell_h
-                        grid[anchor_index][3][grid_y][grid_x] = w
-                        grid[anchor_index][4][grid_y][grid_x] = h
-                        grid[anchor_index][5 + int(cls)][grid_y][grid_x] = 1.0
-                        # print(grid[anchor_index][1][grid_y][grid_x], grid[anchor_index][2][grid_y][grid_x])
-            # show_img = cv2.rectangle(show_img, (int((cx - w / 2) * transformed_img.shape[2]), int((cy - h / 2) * transformed_img.shape[1])), (int((cx + w / 2) * transformed_img.shape[2]), int((cy + h / 2) * transformed_img.shape[1])), (0, 255, 255))
+                    iou = self.get_iou(transformed_img.shape, [grid_x/grid_w, grid_y/grid_h, anchor[0], anchor[1]], [cx, cy, w, h])
+                    if (iou > TRAINING_IOU_THRESHOLD) and (max_iou < iou):
+                        max_iou = iou
+                        select_iou_anchor_index = anchor_index
+                        select_grid_y = grid_y
+                        select_grid_x = grid_x
+                        select_bbox = [1.0, ((x_min + w / 2) % cell_w) / cell_w, ((y_min + h / 2) % cell_h) / cell_h, w, h, 1.0]
+                        select_branch_index = branch_index
+            if max_iou > TRAINING_IOU_THRESHOLD:
+                select_grid = y_true[select_branch_index]
+                select_grid[select_iou_anchor_index][0][select_grid_y][select_grid_x] = select_bbox[0]
+                select_grid[select_iou_anchor_index][1][select_grid_y][select_grid_x] = select_bbox[1]
+                select_grid[select_iou_anchor_index][2][select_grid_y][select_grid_x] = select_bbox[2]
+                select_grid[select_iou_anchor_index][3][select_grid_y][select_grid_x] = select_bbox[3]
+                select_grid[select_iou_anchor_index][4][select_grid_y][select_grid_x] = select_bbox[4]
+                select_grid[select_iou_anchor_index][5 + int(cls)][select_grid_y][select_grid_x] = select_bbox[5]
         # for branch_index in range(branch_num):
         #     grid = y_true[branch_index]
         #     for anchor_index in range(anchor_num_per_branch):

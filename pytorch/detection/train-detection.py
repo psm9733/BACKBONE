@@ -1,10 +1,6 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-<<<<<<< HEAD:pytorch/detection/train-detection.py
-=======
-
->>>>>>> 2ca3a7fdb9861229c7f9c0f4ea14b7641c9b08b1:pytorch/train-detection.py
 import torch
 import albumentations
 import albumentations.pytorch
@@ -16,7 +12,7 @@ from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint
 from utils.utils import get_anchors
 from config import *
-
+torch.autograd.set_detect_anomaly(True)
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -24,13 +20,13 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 def main():
     backbone_name = "Regnet-yolo"
     input_shape = (3, 608, 608)
-    batch_size = 1
-    learning_rate = 1e-4
+    batch_size = 16
+    learning_rate = 1e-3
     weight_decay = 5e-4
     classes = 80
     model_name = backbone_name + "/lr=" + str(learning_rate) + "/wd=" + str(weight_decay) + "/batchsize=" + str(batch_size)
     max_epochs = 125
-    workers = 4
+    workers = 1
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
     save_dir = "./saved_model/" + timestamp
