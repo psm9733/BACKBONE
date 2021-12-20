@@ -95,6 +95,7 @@ class KmeansAnchors:
                 if index != len(result) - 1:
                     f.write("  ")
 
+
 if __name__ == "__main__":
     cluster_number = 9
     dir_path = "../detection/dataset_info/"

@@ -1,8 +1,13 @@
+ANCHOR_INFO_PATH = "C:/Users/sangmin/Desktop/backbone/pytorch/detection/dataset_info/yolo_anchors.txt"
+TRAIN_DIR_PATH = "C:/Users/sangmin/Desktop/backbone/dataset/coco/train2017"
+VALID_DIR_PATH = "C:/Users/sangmin/Desktop/backbone/dataset/coco/val2017"
 
-# ANCHOR_INFO_PATH = "S:/sangmin/backbone/pytorch/detection/dataset_info/yolo_anchors.txt"
-ANCHOR_INFO_PATH = "/home/fssv1/sangmin/backbone/pytorch/detection/dataset_info/yolo_anchors.txt"
-TRAIN_DIR_PATH = "/home/fssv1/sangmin/backbone/dataset/coco/train2017"
-# TRAIN_DIR_PATH = "S:/sangmin/backbone/dataset/coco/test"
-VALID_DIR_PATH = "/home/fssv1/sangmin/backbone/dataset/coco/val2017"
-# VALID_DIR_PATH = "S:/sangmin/backbone/dataset/coco/test"
+backbone_name = "Regnet-yolo"
+input_shape = (3, 608, 608)
+batch_size = 32
+learning_rate = 1e-3
+weight_decay = 5e-4
+classes = 80
 TRAINING_IOU_THRESHOLD = 0.5
+max_epochs = 125
+workers = 1

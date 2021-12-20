@@ -1,27 +1,21 @@
 import os
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
-import torch
-import cv2
-import numpy as np
-import glob
-from network.model import *
+from model import *
 from torchvision import transforms
 import tqdm
-from torchsummary import summary
 import random
-import pytorch_lightning as pl
+import torch
 import warnings
 from utils.utils import unityeye_json_process
 from datetime import datetime
+
 
 def DrawPoint(img, points, color):
     new_img = img.copy()
     for index in range(0, len(points)):
         if index % 2 == 0:
-            new_img = cv2.circle(new_img, (int(points[index]), int(points[index+1])), radius=1, color=color)
+            new_img = cv2.circle(new_img, (int(points[index]), int(points[index + 1])), radius=1, color=color)
     return new_img
+
 
 def Predict(img, model):
     bgr_img = img.copy()
@@ -59,6 +53,7 @@ def Predict(img, model):
     cv2.imshow('lm', lm_img)
     cv2.moveWindow('lm', 484, 200)
     cv2.waitKey()
+
 
 if __name__ == "__main__":
     engine = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

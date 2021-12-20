@@ -2,14 +2,18 @@ import torch
 import torch.nn as nn
 from network.common.layers import Conv2D_BN
 
+
 class StemBlock_3(nn.Module):
     def __init__(self, in_channels_list, out_channels_list, activation, bias=True):
         super().__init__()
         self.output_stride = 4
         self.out_channels_list = out_channels_list
-        self.conv2d_1 = Conv2D_BN(in_channels_list[0], activation=activation, out_channels=out_channels_list[0], kernel_size=(3, 3), stride=2, padding='same', bias=bias)
-        self.conv2d_2 = Conv2D_BN(in_channels_list[1], activation, out_channels=out_channels_list[1], kernel_size=(3, 3), stride=2, padding='same', bias=bias)
-        self.conv2d_3 = Conv2D_BN(in_channels_list[2], activation, out_channels=out_channels_list[2], kernel_size=(3, 3), stride=1, padding='same', bias=bias)
+        self.conv2d_1 = Conv2D_BN(in_channels_list[0], activation=activation, out_channels=out_channels_list[0],
+                                  kernel_size=(3, 3), stride=2, padding='same', bias=bias)
+        self.conv2d_2 = Conv2D_BN(in_channels_list[1], activation, out_channels=out_channels_list[1],
+                                  kernel_size=(3, 3), stride=2, padding='same', bias=bias)
+        self.conv2d_3 = Conv2D_BN(in_channels_list[2], activation, out_channels=out_channels_list[2],
+                                  kernel_size=(3, 3), stride=1, padding='same', bias=bias)
 
     def forward(self, input):
         output1 = self.conv2d_1(input)
@@ -23,16 +27,31 @@ class StemBlock_3(nn.Module):
     def getOutputStride(self):
         return self.output_stride
 
+
 class StemBlock_5(nn.Module):
-    def __init__(self, in_channels_list, out_channels_list, activation, bias=True):
+    def __init__(self, in_channels_list, out_channels_list, activation, strides=1, bias=True):
         super().__init__()
         self.output_stride = 4
         self.out_channels_list = out_channels_list
-        self.conv2d_1 = Conv2D_BN(in_channels_list[0], activation=activation, out_channels=out_channels_list[0], kernel_size=(3, 3), stride=1, padding='same', bias=bias)
-        self.conv2d_2 = Conv2D_BN(in_channels_list[1], activation, out_channels=out_channels_list[1], kernel_size=(3, 3), stride=2, padding='same', bias=bias)
-        self.conv2d_3 = Conv2D_BN(in_channels_list[2], activation, out_channels=out_channels_list[2], kernel_size=(3, 3), stride=1, padding='same', bias=bias)
-        self.conv2d_4 = Conv2D_BN(in_channels_list[3], activation, out_channels=out_channels_list[3], kernel_size=(3, 3), stride=1, padding='same', bias=bias)
-        self.conv2d_5 = Conv2D_BN(in_channels_list[4], activation, out_channels=out_channels_list[4], kernel_size=(3, 3), stride=2, padding='same', bias=bias)
+
+        self.conv2d_1 = Conv2D_BN(in_channels_list[0], activation=activation, out_channels=out_channels_list[0],
+                                  kernel_size=(3, 3), stride=1, padding='same', bias=bias)
+        if strides == 1:
+            self.conv2d_2 = Conv2D_BN(in_channels_list[1], activation, out_channels=out_channels_list[1],
+                                      kernel_size=(3, 3), stride=1, padding='same', bias=bias)
+        else:
+            self.conv2d_2 = Conv2D_BN(in_channels_list[1], activation, out_channels=out_channels_list[1],
+                                      kernel_size=(3, 3), stride=2, padding='same', bias=bias)
+        self.conv2d_3 = Conv2D_BN(in_channels_list[2], activation, out_channels=out_channels_list[2],
+                                  kernel_size=(3, 3), stride=1, padding='same', bias=bias)
+        self.conv2d_4 = Conv2D_BN(in_channels_list[3], activation, out_channels=out_channels_list[3],
+                                  kernel_size=(3, 3), stride=1, padding='same', bias=bias)
+        if strides == 1:
+            self.conv2d_5 = Conv2D_BN(in_channels_list[4], activation, out_channels=out_channels_list[4],
+                                      kernel_size=(3, 3), stride=1, padding='same', bias=bias)
+        else:
+            self.conv2d_5 = Conv2D_BN(in_channels_list[4], activation, out_channels=out_channels_list[4],
+                                      kernel_size=(3, 3), stride=2, padding='same', bias=bias)
 
     def forward(self, input):
         output1 = self.conv2d_1(input)
@@ -48,6 +67,7 @@ class StemBlock_5(nn.Module):
 
     def getOutputStride(self):
         return self.output_stride
+
 
 class SEBlock(nn.Module):
     def __init__(self, in_channels, bottleneck_ratio, bias=True):
@@ -71,4 +91,3 @@ class SEBlock(nn.Module):
 
     def getOutputChannels(self):
         return self.output_channels
-

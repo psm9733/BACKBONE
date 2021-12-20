@@ -1,29 +1,20 @@
 import os
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
 import torch
 import albumentations
 import albumentations.pytorch
 import warnings
 from datetime import datetime
-from network.model import Classification
+from model import Classification
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint
+from config import *
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def main():
-    backbone_name = "ResNet12"
-    # backbone_name = "RegNetY_200MF_CUSTOM"
-    batch_size = 512
-    learning_rate = 1e-3
-    weight_decay = 1e-5
     model_name = backbone_name + "/lr=" + str(learning_rate) + "/wd=" + str(weight_decay) + "/batchsize=" + str(batch_size)
-    max_epochs = 125
-    workers = 4
     timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
     logdir = "./logs/" + timestamp
     save_dir = "./saved_model/" + timestamp

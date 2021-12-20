@@ -1,0 +1,9 @@
+dataset_dir = 'C:/Users/sangmin/Desktop/backbone/dataset/lg_noise_remove'
+backbone_name="SHNet"
+input_shape = (3, 256, 256)
+feature_num = 512
+batch_size = 8
+workers = 4
+learning_rate = 1e-7
+weight_decay = 1e-5
+max_epochs = 72

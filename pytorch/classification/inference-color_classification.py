@@ -6,7 +6,7 @@ import torch
 import cv2
 import numpy as np
 import glob
-from network.model import *
+from model import *
 from torchvision import transforms
 import tqdm
 from torchsummary import summary

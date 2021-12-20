@@ -1,17 +1,11 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
-import torch
-import cv2
-import numpy as np
-import glob
-from network.model import *
+from model import *
 from torchvision import transforms
 import tqdm
-from torchsummary import summary
 import random
-import pytorch_lightning as pl
+import torch
 import warnings
 
 engine = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

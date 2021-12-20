@@ -4,7 +4,7 @@ from glob import glob
 
 if __name__ == "__main__":
     img_list = "./log_img/**/*.jpg"
-    img_list = glob(img_list, recursive = True)
+    img_list = glob(img_list, recursive=True)
     for img_path in tqdm(img_list):
         img_path = img_path.replace("\\", "/")
         img = cv2.imread(img_path)

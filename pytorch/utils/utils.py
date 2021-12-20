@@ -49,7 +49,7 @@ def get_annotations(annotations_path, extensions = ".txt", recursive=True):
                 dataset.append([float(w), float(h)])
     return np.array(dataset)
 
-def get_anchors(filepath):
+def read_anchors(filepath):
     anchors = []
     with open(filepath, 'r') as file:
         line = file.read()

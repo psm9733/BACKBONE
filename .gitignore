@@ -115,8 +115,10 @@ fabric.properties
 *.0
 __pycache__
 .idea
-dataset
+dataset/
 *.pth
 *.onnx
 *.ckpt
 *.yaml
+logs/
+saved_model/
